@@ -2,27 +2,27 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs'); // Assure-toi d'importer fs
+const fs = require('fs');
+const isAuthenticated = require('../middleware/authMiddleware'); // Importer le middleware
 
+router.use(isAuthenticated);
 // Configuration de Multer pour le téléchargement de fichiers
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/'); // Assure-toi que ce dossier existe
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Nom unique pour le fichier
+    cb(null, Date.now() + path.extname(file.originalname));
   }
 });
 
 const upload = multer({ storage });
-
-// Page pour afficher les fichiers
+// Route pour afficher la page des fichiers
 router.get('/', (req, res) => {
-  const user = req.user || { cn: 'Invité' }; // Remplace par ta logique d'utilisateur
-  const files = fs.readdirSync(path.join(__dirname, '../uploads')); // Lire les fichiers dans le dossier uploads
-  res.render('files', { user, files }); // Passe user et files à la vue
+  const user = req.user || { cn: 'Invité' }; // Utilisateur fictif si non authentifié
+  const files = fs.readdirSync(path.join(__dirname, '../views')); // Lire les fichiers dans le dossier uploads
+  res.render('files', { user, files }); // Rendre la vue avec les fichiers
 });
-
 // Route pour uploader un fichier
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
@@ -31,6 +31,12 @@ router.post('/upload', upload.single('file'), (req, res) => {
   }
   req.flash('success', 'Fichier chargé avec succès!');
   res.redirect('/files');
+});
+// Route pour afficher les ressources
+router.get('/resources', (req, res) => {
+  const user = req.user || { cn: 'Invité' }; // Gère l'utilisateur
+  const files = fs.readdirSync(path.join(__dirname, '../views/')); // Assure-toi que ce dossier existe
+  res.render('resources', { user, files }); // Rends la vue resources.ejs
 });
 
 // Route pour télécharger un fichier

@@ -1,7 +1,7 @@
 const express = require('express');
 const passport = require('passport');
 const router = express.Router();
-
+const isAuthenticated = require('../middleware/authMiddleware'); // Importer le middleware
 // Page de connexion
 router.get('/login', (req, res) => {
   if (req.isAuthenticated()) {
@@ -26,5 +26,5 @@ router.get('/logout', (req, res, next) => {
     res.redirect('/login');
   });
 });
-
+router.use(isAuthenticated);
 module.exports = router;
