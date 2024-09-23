@@ -67,13 +67,20 @@ passport.use(new LdapStrategy(OPTS, (user, done) => {
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
+app.get('/', (req, res) => {
+  if (req.isAuthenticated()) {
+      return res.redirect('/files'); // Redirige vers la page des fichiers si l'utilisateur est connecté
+  }
+  res.redirect('/login'); // Sinon, redirige vers la page de connexion
+});
+
 // Routes
 const authRoutes = require('./routes/auth');
 const fileRoutes = require('./routes/file');
 app.use('/', authRoutes);
 app.use('/files', fileRoutes);
 
-// Serveur statique
+// Serveur statique pour les fichiers CSS et JS
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Démarrer le serveur
