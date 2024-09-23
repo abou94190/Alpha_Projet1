@@ -3,73 +3,61 @@ const session = require('express-session');
 const passport = require('passport');
 const LdapStrategy = require('passport-ldapauth');
 const path = require('path');
-const multer = require('multer');
-const fs = require('fs');
+// const MongoStore = require('connect-mongo'); // Commenté car nous n'utilisons pas MongoDB pour l'instant
 
+// Initialisation de l'application Express
 const app = express();
 
-const DEMO_MODE = process.env.DEMO_MODE || true;  // Mettre à true pour activer le mode démo
-
 // Configuration de la session
-app.use(session({ secret: 'secret-key', resave: false, saveUninitialized: true }));
+app.use(session({
+  secret: 'my-production-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    secure: false, // Pas besoin de HTTPS pour l'instant
+    maxAge: 1000 * 60 * 60 // 1 heure
+  }
+  // store: MongoStore.create({ mongoUrl: 'mongodb://localhost:27017/sessions' }) // Commenté car nous n'utilisons pas MongoDB
+}));
+
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Configuration du moteur de templates EJS
+// Configuration du moteur de templates EJS pour rendre les vues
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Fichiers statiques
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Servir les fichiers uploadés
+// Configuration LDAP pour la production
+const OPTS = {
+  server: {
+    url: 'ldap://TON_SERVEUR_LDAP:389', // Adresse de ton serveur LDAP réel
+    bindDN: 'cn=admin,dc=tondomaine,dc=com', // DN de connexion administrateur LDAP
+    bindCredentials: 'tonmotdepasse', // Mot de passe de l'admin LDAP
+    searchBase: 'dc=tondomaine,dc=com', // Base de recherche dans ton LDAP
+    searchFilter: '(uid={{username}})' // Filtre de recherche pour les utilisateurs LDAP
+  }
+};
 
-if (!DEMO_MODE) {
-  // Configuration LDAP
-  const OPTS = {
-    server: {
-      url: 'ldap://mon-serveur-ldap:389',
-      bindDN: 'cn=admin,dc=example,dc=com',
-      bindCredentials: 'mon_mot_de_passe_securise',
-      searchBase: 'ou=users,dc=example,dc=com',
-      searchFilter: '(uid={{username}})'
-    }
-  };
+passport.use(new LdapStrategy(OPTS));
 
-  passport.use(new LdapStrategy(OPTS));
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
 
-  passport.serializeUser((user, done) => {
-    done(null, user);
-  });
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
 
-  passport.deserializeUser((user, done) => {
-    done(null, user);
-  });
-} else {
-  // Mode démo: simuler un utilisateur connecté
-  passport.serializeUser((user, done) => {
-    done(null, { cn: 'Demo User', uid: 'demo' });
-  });
-
-  passport.deserializeUser((user, done) => {
-    done(null, { cn: 'Demo User', uid: 'demo' });
-  });
-
-  app.use((req, res, next) => {
-    req.isAuthenticated = () => true;
-    req.user = { cn: 'Demo User', uid: 'demo' };
-    next();
-  });
-}
-
-// Routes d'authentification
+// Routes
 const authRoutes = require('./routes/auth');
-app.use('/', authRoutes);
-
-// Routes pour la gestion des fichiers
 const fileRoutes = require('./routes/file');
+app.use('/', authRoutes);
 app.use('/files', fileRoutes);
 
-// Démarrer le serveur
+// Serveur statique pour les fichiers CSS et JS
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Démarrer le serveur HTTP
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`);
