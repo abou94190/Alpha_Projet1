@@ -19,15 +19,31 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage });
+
 // Route pour afficher la page des ressources
 router.get('/resources', (req, res) => {
   if (!req.isAuthenticated()) {
     return res.redirect('/login');
   }
-  res.render('resources', { user: req.user });
+  fs.readdir(path.join(__dirname, '../uploads'), (err, files) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Erreur lors du chargement des fichiers');
+    }
+    res.render('resources', { user: req.user, files });
+  });
 });
 
-// Route pour afficher la page d'upload
+// Route pour uploader une ressource
+router.post('/resources/upload', upload.single('resourceFile'), (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.redirect('/login');
+  }
+  // Le fichier a été uploadé
+  res.redirect('/files/resources');
+});
+
+// Route pour afficher la page d'upload (si nécessaire)
 router.get('/upload', (req, res) => {
   if (!req.isAuthenticated()) {
     return res.redirect('/login');
@@ -35,22 +51,11 @@ router.get('/upload', (req, res) => {
   res.render('upload', { user: req.user });
 });
 
-// Route pour uploader un fichier
-router.post('/upload', upload.single('projectFile'), (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.redirect('/login');
-  }
-
-  // Le fichier a été uploadé
-  res.redirect('/files');
-});
-
 // Route pour lister les fichiers uploadés
 router.get('/', (req, res) => {
   if (!req.isAuthenticated()) {
     return res.redirect('/login');
   }
-
   const uploadPath = path.join(__dirname, '../uploads');
   fs.readdir(uploadPath, (err, files) => {
     if (err) {
