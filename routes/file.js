@@ -1,21 +1,42 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
+const multer = require('multer');
 const path = require('path');
+const fs = require('fs'); // Assure-toi d'importer fs
 
-// Route pour afficher l'espace de dépôt
+// Configuration de Multer pour le téléchargement de fichiers
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // Assure-toi que ce dossier existe
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // Nom unique pour le fichier
+  }
+});
+
+const upload = multer({ storage });
+
+// Page pour afficher les fichiers
 router.get('/', (req, res) => {
-  const directoryPath = path.join(__dirname, '../uploads');
+  const user = req.user || { cn: 'Invité' }; // Remplace par ta logique d'utilisateur
+  const files = fs.readdirSync(path.join(__dirname, '../uploads')); // Lire les fichiers dans le dossier uploads
+  res.render('files', { user, files }); // Passe user et files à la vue
+});
 
-  fs.readdir(directoryPath, (err, files) => {
-    if (err) {
-      req.flash('error', 'Erreur lors du chargement des fichiers.');
-      return res.redirect('/'); // Redirige vers la page d'accueil si erreur
-    }
-    
-    // Crée une liste de fichiers
-    res.render('home', { files: files, user: req.user, messages: req.flash() });
-  });
+// Route pour uploader un fichier
+router.post('/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    req.flash('error', 'Erreur lors du chargement du fichier.');
+    return res.redirect('/files');
+  }
+  req.flash('success', 'Fichier chargé avec succès!');
+  res.redirect('/files');
+});
+
+// Route pour télécharger un fichier
+router.get('/download/:filename', (req, res) => {
+  const file = path.join(__dirname, '../uploads', req.params.filename);
+  res.download(file);
 });
 
 // Route pour supprimer un fichier
