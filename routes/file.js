@@ -5,7 +5,9 @@ const path = require('path');
 const fs = require('fs');
 const isAuthenticated = require('../middleware/authMiddleware'); // Importer le middleware
 
+// Utiliser le middleware d'authentification
 router.use(isAuthenticated);
+
 // Configuration de Multer pour le téléchargement de fichiers
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -17,12 +19,18 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+
 // Route pour afficher la page des fichiers
 router.get('/', (req, res) => {
-  const user = req.user || { cn: 'Invité' }; // Utilisateur fictif si non authentifié
-  const files = fs.readdirSync(path.join(__dirname, '../views')); // Lire les fichiers dans le dossier uploads
-  res.render('files', { user, files }); // Rendre la vue avec les fichiers
+  const user = req.user; // Utilisateur authentifié
+  const files = fs.readdirSync(path.join(__dirname, '../uploads')); // Lire les fichiers dans le dossier uploads
+
+  // Filtrer les fichiers indésirables
+  const filteredFiles = files.filter(file => !['login.ejs', 'resources.ejs', 'upload.ejs'].includes(file));
+
+  res.render('files', { user, files: filteredFiles }); // Rendre la vue avec les fichiers filtrés
 });
+
 // Route pour uploader un fichier
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
@@ -32,11 +40,16 @@ router.post('/upload', upload.single('file'), (req, res) => {
   req.flash('success', 'Fichier chargé avec succès!');
   res.redirect('/files');
 });
+
 // Route pour afficher les ressources
 router.get('/resources', (req, res) => {
-  const user = req.user || { cn: 'Invité' }; // Gère l'utilisateur
-  const files = fs.readdirSync(path.join(__dirname, '../views/')); // Assure-toi que ce dossier existe
-  res.render('resources', { user, files }); // Rends la vue resources.ejs
+  const user = req.user; // Gère l'utilisateur
+  const files = fs.readdirSync(path.join(__dirname, '../uploads')); // Lire les fichiers dans le dossier uploads
+
+  // Filtrer les fichiers indésirables
+  const filteredResources = files.filter(file => !['login.ejs', 'resources.ejs', 'upload.ejs'].includes(file));
+
+  res.render('resources', { user, files: filteredResources }); // Rendre la vue resources.ejs avec les fichiers filtrés
 });
 
 // Route pour télécharger un fichier
