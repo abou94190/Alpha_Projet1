@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace de dépôt</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1>Fichiers déposés</h1>
+    <p>Bienvenue, <%= user.cn %>! Voici les fichiers déposés par le groupe.</p>
+
+    <ul>
+        <% files.forEach(file => { %>
+            <li>
+                <a href="/uploads/<%= file %>" download><%= file %></a>
+                <!-- Bouton de suppression -->
+                <form action="/files/delete/<%= file %>" method="POST" style="display:inline;">
+                    <button type="submit" onclick="return confirm('Voulez-vous vraiment supprimer ce fichier ?');">Supprimer</button>
+                </form>
+            </li>
+        <% }); %>
+    </ul>
+
+    <a href="/files/upload">Télécharger un nouveau fichier</a>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uploader un projet</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1>Uploader un projet</h1>
+    <p>Bienvenue, <%= user.cn %>! Téléchargez votre fichier ici.</p>
+
+    <form action="/files/upload" method="POST" enctype="multipart/form-data">
+        <input type="file" name="projectFile" required />
+        <button type="submit">Télécharger</button>
+    </form>
+
+    <a href="/files">Voir les fichiers uploadés</a>
+</body>
+</html>
