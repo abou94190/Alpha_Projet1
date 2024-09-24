@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const isAuthenticated = require('../middleware/authMiddleware'); // Importer le middleware
+const isAuthenticated = require('../middleware/authmiddleware'); // Importer le middleware
 
 // Utiliser le middleware d'authentification
 router.use(isAuthenticated);

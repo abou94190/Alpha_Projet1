@@ -1,10 +1,30 @@
 const express = require('express');
+const passport = require('passport');
 const router = express.Router();
-
-// Page de connexion simulée
+const isAuthenticated = require('../middleware/authmiddleware'); // Importer le middleware
+// Page de connexion
 router.get('/login', (req, res) => {
-  // En mode démo, on redirige automatiquement vers la page d'accueil
-  res.redirect('/files');
+  if (req.isAuthenticated()) {
+    return res.redirect('/files');
+  }
+  res.render('login', { messages: req.flash('error') });
 });
 
+// Route de soumission du formulaire de connexion
+router.post('/login', passport.authenticate('ldapauth', {
+  successRedirect: '/files',
+  failureRedirect: '/login',
+  failureFlash: true
+}));
+
+// Déconnexion
+router.get('/logout', (req, res, next) => {
+  req.logout(err => {
+    if (err) {
+      return next(err);
+    }
+    res.redirect('/login');
+  });
+});
+router.use(isAuthenticated);
 module.exports = router;
