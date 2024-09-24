@@ -8,16 +8,23 @@ const bodyParser = require('body-parser');
 const flash = require('connect-flash');
 
 const app = express();
-
 // Connexion à MongoDB
-mongoose.connect('mongodb://localhost:27017/ton_db', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(() => {
-  console.log('Connecté à MongoDB');
-}).catch(err => {
-  console.error('Erreur de connexion à MongoDB', err);
+// app.js ou server.js
+
+const dbURI = 'mongodb://127.0.0.1:27017/mon_atelier';
+
+mongoose.connect(dbURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 20000 // Délai d'attente pour la connexion
+})
+.then(() => {
+    console.log('Connexion à la base de données réussie !');
+})
+.catch(err => {
+    console.error('Erreur de connexion à la base de données:', err);
 });
+
 
 // Middleware pour traiter les données du formulaire
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -77,6 +84,7 @@ app.get('/', (req, res) => {
 // Routes
 const authRoutes = require('./routes/auth');
 const fileRoutes = require('./routes/file');
+const connectDB = require('./DB/db');
 app.use('/', authRoutes);
 app.use('/files', fileRoutes);
 
