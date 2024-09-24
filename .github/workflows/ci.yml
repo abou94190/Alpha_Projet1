@@ -1,38 +1,29 @@
-name: Node.js CI Pipeline
+name: Node.js CI
 
 on:
   push:
-    branches:
-      - main
-      - branche_abou
-
+    branches: 
+      - branche_abou  # Changez ceci pour la branche sur laquelle vous souhaitez que le workflow soit déclenché
   pull_request:
     branches:
-      - main
-      - branche_abou
+      - branche_abou  # Changez ceci pour la branche cible de vos pull requests
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [16.x, 18.x, 7.x,]  # Les versions de Node.js à tester
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Vérifier le code source
+        uses: actions/checkout@v2
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
+      - name: Installer Node.js
+        uses: actions/setup-node@v2
+        with:
+          # Ne spécifiez pas de version, ce qui utilisera la dernière version stable par défaut
+          # node-version: '14'  # Supprimé pour utiliser la dernière version
 
-    - name: Install dependencies
-      run: npm install
+      - name: Installer les dépendances
+        run: npm install  # Installe les dépendances du fichier package.json
 
-    - name: Run tests
-      run: npm test
-
-    - name: Run linter (optionnel)
-      run: npm run lint
+      - name: Exécuter les tests
+        run: npm test  # Exécute les tests définis dans package.json
