@@ -65,16 +65,23 @@ passport.use(new LdapStrategy(OPTS, (user, done) => {
   console.log('Utilisateur LDAP:', user);
 
   if (user) {
-      // Assurez-vous que memberOf est un tableau
-      const memberOfArray = Array.isArray(user.memberOf) ? user.memberOf : [user.memberOf];
+      // Assurez-vous que memberOf est un tableau et qu'il contient des valeurs valides
+      const memberOfArray = Array.isArray(user.memberOf) ? user.memberOf : (user.memberOf ? [user.memberOf] : []);
       const isAdmin = memberOfArray.includes('CN=Admin,DC=workshop,DC=local');
 
       console.log(`Utilisateur ${user.sAMAccountName} est admin: ${isAdmin}`);
-      return done(null, { ...user, isAdmin });
+      
+      // Incluez un identifiant utilisateur valide
+      return done(null, { 
+          ...user, 
+          isAdmin, 
+          memberOf: memberOfArray 
+      });
   } else {
       return done(null, false, { message: 'Nom d’utilisateur ou mot de passe incorrect' });
   }
 }));
+
 
 
 

@@ -14,25 +14,30 @@ const upload = multer({ storage });
 
 // Route pour afficher la page des fichiers
 // Route pour afficher la page des fichiers
+// Route pour afficher la page des fichiers
 router.get('/', async (req, res) => {
     const user = req.user; // Utilisateur authentifié
     try {
         let files;
-
-        // Vérifiez si l'utilisateur est un admin
         if (user.isAdmin) {
-            files = await File.find(); // Récupérer tous les fichiers pour les admins
+            files = await File.find(); // Admins can see all files
         } else {
-            files = await File.find({ uploadedBy: user._id }); // Récupérer uniquement les fichiers de l'utilisateur
+            // Retrieve files only uploaded by the user or shared with their group
+            files = await File.find({
+                $or: [
+                    { uploadedBy: user._id }, // Files uploaded by the user
+                    { uploadedByGroup: user.memberOf ? user.memberOf[0] : '' } // Adjust based on your group logic
+                ]
+            });
         }
-
-        res.render('files', { user, files }); // Rendre la vue avec les fichiers
+        res.render('files', { user, files }); // Render the view with the files
     } catch (err) {
         console.error(err);
         req.flash('error', 'Erreur lors de la récupération des fichiers.');
         res.redirect('/files');
     }
 });
+
 // Route pour afficher la page des fichiers pour les admins
 router.get('/admin', isAuthenticated, async (req, res) => {
     const user = req.user; // Utilisateur authentifié
@@ -60,32 +65,39 @@ router.get('/resources', async (req, res) => {
         res.redirect('/files'); // Redirect if there's an error
     }
 });
-// Route pour uploader un fichier
-// Route to upload a file
+
 router.post('/upload', upload.single('file'), async (req, res) => {
+    console.log("User Object:", req.user);
+
     if (!req.file) {
         req.flash('error', 'Erreur lors du chargement du fichier.');
         return res.redirect('/files');
     }
 
+    if (!req.user || !req.user.sAMAccountName) {
+        console.error("User is not authenticated or user ID is missing");
+        req.flash('error', 'Erreur d\'authentification. Veuillez vous reconnecter.');
+        return res.redirect('/login');
+    }
+
+    // Créez un nouvel objet File
     const newFile = new File({
         filename: req.file.originalname,
-        uploadedBy: req.user._id, // Associate the file with the user
-        buffer: req.file.buffer, // Save the file's buffer
+        uploadedBy: req.user.sAMAccountName, // Utilisez sAMAccountName comme identifiant
+        uploadedByGroup: (req.user.memberOf && req.user.memberOf.length > 0) ? req.user.memberOf[0] : 'DefaultGroup', // Gérer le groupe
+        buffer: req.file.buffer, // Assurez-vous que vous passez le buffer ici
     });
 
     try {
-        await newFile.save(); // Save the file in the database
+        await newFile.save();
         req.flash('success', 'Fichier chargé avec succès!');
         res.redirect('/files');
     } catch (err) {
-        console.error(err);
+        console.error("Error saving file:", err);
         req.flash('error', 'Erreur lors de l\'enregistrement du fichier.');
         res.redirect('/files');
     }
 });
-
-
 
 // Route pour supprimer un fichier
 router.post('/delete/:id', async (req, res) => {
