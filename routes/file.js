@@ -1,86 +1,73 @@
 const express = require('express');
+const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const router = express.Router();
+const isAuthenticated = require('../middleware/authMiddleware'); // Importer le middleware
 
-// Configuration de multer pour le téléchargement de fichiers
+// Utiliser le middleware d'authentification
+router.use(isAuthenticated);
+
+// Configuration de Multer pour le téléchargement de fichiers
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadPath = path.join(__dirname, '../uploads');
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // Assure-toi que ce dossier existe
   },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname); // Nom unique pour chaque fichier
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
   }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
-// Route pour afficher la page d'upload
-router.get('/upload', (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.redirect('/login');
-  }
-  res.render('upload', { user: req.user });
+// Route pour afficher la page des fichiers
+router.get('/', (req, res) => {
+  const user = req.user; // Utilisateur authentifié
+  const files = fs.readdirSync(path.join(__dirname, '../uploads')); // Lire les fichiers dans le dossier uploads
+
+  // Filtrer les fichiers indésirables
+  const filteredFiles = files.filter(file => !['login.ejs', 'resources.ejs', 'upload.ejs'].includes(file));
+
+  res.render('files', { user, files: filteredFiles }); // Rendre la vue avec les fichiers filtrés
 });
 
 // Route pour uploader un fichier
-router.post('/upload', upload.single('projectFile'), (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.redirect('/login');
+router.post('/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    req.flash('error', 'Erreur lors du chargement du fichier.');
+    return res.redirect('/files');
   }
-
-  // Le fichier a été uploadé
+  req.flash('success', 'Fichier chargé avec succès!');
   res.redirect('/files');
 });
 
-// Route pour lister les fichiers uploadés
-router.get('/', (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.redirect('/login');
-  }
+// Route pour afficher les ressources
+router.get('/resources', (req, res) => {
+  const user = req.user; // Gère l'utilisateur
+  const files = fs.readdirSync(path.join(__dirname, '../uploads')); // Lire les fichiers dans le dossier uploads
 
-  const uploadPath = path.join(__dirname, '../uploads');
-  fs.readdir(uploadPath, (err, files) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send('Erreur lors du chargement des fichiers');
-    }
+  // Filtrer les fichiers indésirables
+  const filteredResources = files.filter(file => !['login.ejs', 'resources.ejs', 'upload.ejs'].includes(file));
 
-    res.render('home', { user: req.user, files });
-  });
+  res.render('resources', { user, files: filteredResources }); // Rendre la vue resources.ejs avec les fichiers filtrés
+});
+
+// Route pour télécharger un fichier
+router.get('/download/:filename', (req, res) => {
+  const file = path.join(__dirname, '../uploads', req.params.filename);
+  res.download(file);
 });
 
 // Route pour supprimer un fichier
 router.post('/delete/:filename', (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.redirect('/login');
-  }
-
-  const filename = req.params.filename;
-  const filePath = path.join(__dirname, '../uploads', filename);
-
-  // Vérifier si le fichier existe avant de le supprimer
-  fs.access(filePath, fs.constants.F_OK, (err) => {
+  const file = path.join(__dirname, '../uploads', req.params.filename);
+  fs.unlink(file, (err) => {
     if (err) {
-      console.error(`Fichier non trouvé : ${filename}`);
-      return res.status(404).send('Fichier non trouvé');
+      req.flash('error', 'Erreur lors de la suppression du fichier.');
+      return res.redirect('/files');
     }
-
-    // Supprimer le fichier
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error(`Erreur lors de la suppression du fichier : ${filename}`, err);
-        return res.status(500).send('Erreur lors de la suppression du fichier');
-      }
-
-      console.log(`Fichier supprimé : ${filename}`);
-      res.redirect('/files'); // Rediriger vers la liste des fichiers après suppression
-    });
+    req.flash('success', 'Fichier supprimé avec succès!');
+    res.redirect('/files');
   });
 });
 

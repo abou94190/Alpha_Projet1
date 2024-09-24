@@ -1,55 +1,61 @@
+/* Personnalisation globale */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-  }
-  
-  .login-container, .home-container {
-    max-width: 300px;
-    margin: 100px auto;
-    padding: 20px;
-    background-color: white;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  }
-  
-  h1 {
-    text-align: center;
-  }
-  
-  form {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  input {
-    margin-bottom: 15px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  button {
-    padding: 10px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  
-  button:hover {
-    background-color: #218838;
-  }
-  
-  a {
-    display: block;
-    margin-top: 20px;
-    text-align: center;
-    text-decoration: none;
-    color: #007bff;
-  }
-  
-  a:hover {
-    text-decoration: underline;
-  }
-  
+  background-color: #003366; /* Bleu sombre */
+  color: white;
+  font-family: 'Arial', sans-serif;
+}
+
+/* Style pour la barre de navigation */
+.navbar {
+  background-color: #004080; /* Bleu légèrement plus clair */
+}
+
+.navbar-brand, .nav-link {
+  color: white !important;
+}
+
+.navbar-brand:hover, .nav-link:hover {
+  color: #ccccff !important; /* Bleu pâle clair au survol */
+}
+
+/* Style pour le conteneur principal */
+.container {
+  background-color: #0059b3; /* Fond bleu plus vif pour les sections principales */
+  padding: 20px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+/* Style pour les boutons */
+.btn-primary {
+  background-color: #0066cc;
+  border-color: #005bb5;
+}
+
+.btn-primary:hover {
+  background-color: #004080;
+}
+
+/* Style des listes et autres éléments */
+.list-group-item {
+  background-color: #003366;
+  border-color: #0059b3;
+  color: white;
+}
+
+.list-group-item:hover {
+  background-color: #004080;
+}
+
+/* Dropdown personnalisé */
+.dropdown-menu {
+  background-color: #004080;
+}
+
+.dropdown-item {
+  color: white;
+}
+
+.dropdown-item:hover {
+  background-color: #003366;
+}
