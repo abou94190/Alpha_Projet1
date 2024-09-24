@@ -1,61 +1,127 @@
-/* Personnalisation globale */
+/* Style global */
 body {
-  background-color: #003366; /* Bleu sombre */
-  color: white;
-  font-family: 'Arial', sans-serif;
+  font-family: Arial, sans-serif;
+  background-color: #d9eaf7; /* Bleu clair pour le fond */
+  margin: 0;
+  padding: 0;
 }
 
-/* Style pour la barre de navigation */
-.navbar {
-  background-color: #004080; /* Bleu légèrement plus clair */
-}
-
-.navbar-brand, .nav-link {
-  color: white !important;
-}
-
-.navbar-brand:hover, .nav-link:hover {
-  color: #ccccff !important; /* Bleu pâle clair au survol */
-}
-
-/* Style pour le conteneur principal */
 .container {
-  background-color: #0059b3; /* Fond bleu plus vif pour les sections principales */
+  width: 80%;
+  margin: 0 auto;
   padding: 20px;
-  border-radius: 10px;
-  margin-top: 20px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 50px;
 }
 
-/* Style pour les boutons */
-.btn-primary {
-  background-color: #0066cc;
-  border-color: #005bb5;
+/* Barre de navigation */
+nav {
+  background-color: #333;
+  overflow: hidden;
 }
 
-.btn-primary:hover {
-  background-color: #004080;
+nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-/* Style des listes et autres éléments */
-.list-group-item {
-  background-color: #003366;
-  border-color: #0059b3;
+nav ul li {
+  float: left;
+}
+
+nav ul li a {
   color: white;
+  text-decoration: none;
+  padding: 14px 20px;
+  display: block;
 }
 
-.list-group-item:hover {
-  background-color: #004080;
+nav ul li a:hover {
+  background-color: #575757;
 }
 
-/* Dropdown personnalisé */
-.dropdown-menu {
-  background-color: #004080;
+/* Menu utilisateur avec déconnexion */
+.user-menu {
+  float: right;
+  position: relative;
 }
 
-.dropdown-item {
+.user-menu a {
   color: white;
+  text-decoration: none;
+  padding: 14px 20px;
+  display: block;
+  background-color: #333;
 }
 
-.dropdown-item:hover {
-  background-color: #003366;
+.user-menu a:hover {
+  background-color: #575757;
+}
+
+.user-menu .dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: white;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.user-menu .dropdown a {
+  color: black;
+  padding: 12px 16px;
+  display: block;
+  text-align: left;
+}
+
+.user-menu .dropdown a:hover {
+  background-color: #f1f1f1;
+}
+
+/* Afficher le menu déroulant lors du hover */
+.user-menu:hover .dropdown {
+  display: block;
+}
+
+/* Style pour la liste des fichiers */
+ul.file-list {
+  list-style: none;
+  padding: 0;
+}
+
+ul.file-list li {
+  margin: 10px 0;
+  background: #fafafa;
+  padding: 10px;
+  border: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+ul.file-list li a {
+  text-decoration: none;
+  color: #333;
+}
+
+ul.file-list li a:hover {
+  text-decoration: underline;
+}
+
+/* Boutons stylisés */
+ul.file-list li button {
+  background-color: #5bc0de; /* Un bleu clair */
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 5px; /* Arrondir les angles du bouton */
+  transition: background-color 0.3s; /* Transition pour un effet plus fluide */
+}
+
+ul.file-list li button:hover {
+  background-color: #31b0d5; /* Une teinte légèrement plus foncée au survol */
 }
