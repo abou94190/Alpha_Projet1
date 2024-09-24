@@ -93,7 +93,7 @@ MongoDB est une base de données NoSQL orientée documents, conçue pour stocker
 
 - **Sur macOS et Linux :** Démarrez MongoDB en utilisant la commande suivante :
   ```bash
-  mongod --dbpath /data/db
+  mongosh
   ```
 
 ## Installation de Node.js
