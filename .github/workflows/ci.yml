@@ -4,9 +4,12 @@ on:
   push:
     branches:
       - main
+      - branche_abou
+
   pull_request:
     branches:
       - main
+      - branche_abou
 
 jobs:
   build:
