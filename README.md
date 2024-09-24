@@ -1,27 +1,30 @@
-
-
-# Guide d'Installation de MongoDB
+# Guide d'Installation de MongoDB et Node.js
 
 ## Sommaire
 - [Introduction](#introduction)
 - [Prérequis](#prérequis)
-- [Installation sur Windows](#installation-sur-windows)
-- [Installation sur macOS](#installation-sur-macos)
-- [Installation sur Linux](#installation-sur-linux)
+- [Installation de MongoDB](#installation-de-mongodb)
+  - [Installation sur Windows](#installation-sur-windows)
+  - [Installation sur macOS](#installation-sur-macos)
+  - [Installation sur Linux](#installation-sur-linux)
 - [Configuration de MongoDB](#configuration-de-mongodb)
 - [Démarrer MongoDB](#démarrer-mongodb)
-- [Utilisation de MongoDB](#utilisation-de-mongodb)
+- [Installation de Node.js](#installation-de-nodejs)
+- [Cloner le projet GitHub](#cloner-le-projet-github)
+- [Utilisation de MongoDB et Node.js](#utilisation-de-mongodb-et-nodejs)
 - [Conclusion](#conclusion)
 
 ## Introduction
-MongoDB est une base de données NoSQL orientée documents, conçue pour stocker et gérer des données non structurées. Ce guide vous montrera comment installer MongoDB sur différentes plateformes.
+MongoDB est une base de données NoSQL orientée documents, conçue pour stocker et gérer des données non structurées. Node.js est un environnement d'exécution JavaScript côté serveur. Ce guide vous montrera comment installer MongoDB et Node.js, ainsi que cloner un projet depuis GitHub.
 
 ## Prérequis
-- Accès à Internet pour télécharger MongoDB.
+- Accès à Internet pour télécharger MongoDB et Node.js.
 - Un terminal ou une interface de ligne de commande.
 - Droits d'administrateur pour l'installation.
 
-## Installation sur Windows
+## Installation de MongoDB
+
+### Installation sur Windows
 
 1. **Télécharger MongoDB :**
    - Allez sur le site officiel de [MongoDB](https://www.mongodb.com/try/download/community).
@@ -35,7 +38,7 @@ MongoDB est une base de données NoSQL orientée documents, conçue pour stocker
 3. **Configurer le chemin :**
    - Ajoutez le chemin de MongoDB (par défaut `C:\Program Files\MongoDB\Server\<version>\bin`) à la variable d'environnement `PATH`.
 
-## Installation sur macOS
+### Installation sur macOS
 
 1. **Installer Homebrew :** (si ce n'est pas déjà fait)
    ```bash
@@ -48,9 +51,9 @@ MongoDB est une base de données NoSQL orientée documents, conçue pour stocker
    brew install mongodb-community
    ```
 
-## Installation sur Linux
+### Installation sur Linux
 
-### Pour Ubuntu :
+#### Pour Ubuntu :
 
 1. **Importer la clé publique utilisée par le système de gestion de paquets :**
    ```bash
@@ -93,7 +96,41 @@ MongoDB est une base de données NoSQL orientée documents, conçue pour stocker
   mongod --dbpath /data/db
   ```
 
-## Utilisation de MongoDB
+## Installation de Node.js
+
+1. **Télécharger Node.js :**
+   - Allez sur le site officiel de [Node.js](https://nodejs.org/en/download/) et téléchargez l'installateur pour votre système d'exploitation.
+
+2. **Installer Node.js :**
+   - Suivez les instructions de l'assistant d'installation.
+
+3. **Vérifier l'installation :**
+   Pour vérifier que Node.js et npm (le gestionnaire de paquets de Node.js) sont bien installés, exécutez les commandes suivantes :
+   ```bash
+   node -v
+   npm -v
+   ```
+
+## Cloner le projet GitHub
+
+1. **Cloner le dépôt :**
+   Ouvrez votre terminal et exécutez la commande suivante pour cloner le projet :
+   ```bash
+   git clone https://github.com/abou94190/Alpha_Projet1.git
+   ```
+
+2. **Naviguer dans le répertoire du projet :**
+   ```bash
+   cd Alpha_Projet1
+   ```
+
+3. **Installer les dépendances :**
+   Exécutez la commande suivante pour installer les dépendances du projet :
+   ```bash
+   npm install
+   ```
+
+## Utilisation de MongoDB et Node.js
 
 1. **Lancer le client MongoDB :**
    ```bash
@@ -111,7 +148,6 @@ MongoDB est une base de données NoSQL orientée documents, conçue pour stocker
    ```
 
 ## Conclusion
-Vous avez maintenant installé et configuré MongoDB sur votre machine. Vous pouvez commencer à l'utiliser pour vos projets de développement. Pour plus d'informations, consultez la [documentation officielle de MongoDB](https://docs.mongodb.com/manual/).
+Vous avez maintenant installé MongoDB et Node.js, et vous avez cloné le projet depuis GitHub. Vous pouvez commencer à travailler sur votre projet et utiliser MongoDB pour gérer vos données. Pour plus d'informations, consultez la [documentation officielle de MongoDB](https://docs.mongodb.com/manual/) et la [documentation de Node.js](https://nodejs.org/en/docs/).
 
 ---
-
