@@ -10,7 +10,7 @@ const flash = require('connect-flash');
 const app = express();
 // Connexion à MongoDB
 // app.js ou server.js
-
+const File = require('./models/File'); // Ensure the correct path
 const dbURI = 'mongodb://127.0.0.1:27017/mon_atelier';
 
 mongoose.connect(dbURI, {
@@ -94,6 +94,32 @@ const fileRoutes = require('./routes/file');
 const connectDB = require('./DB/db');
 app.use('/', authRoutes);
 app.use('/files', fileRoutes);
+
+// Route to download a file
+app.get('/files/download/:id', async (req, res) => {
+  const fileId = req.params.id;
+
+  try {
+      // Find the file in the database by ID
+      const file = await File.findById(fileId);
+
+      if (!file) {
+          return res.status(404).send('File not found');
+      }
+
+      // Set the response headers to prompt a file download
+      res.set({
+          'Content-Type': 'application/octet-stream',
+          'Content-Disposition': `attachment; filename="${file.filename}"`,
+      });
+
+      // Send the file buffer as response
+      res.send(file.buffer); // Assuming the binary data is stored in the 'buffer' field
+  } catch (err) {
+      console.error(err);
+      res.status(500).send('Server error');
+  }
+});
 
 app.post('/login', passport.authenticate('ldapauth', {
   failureRedirect: '/login',

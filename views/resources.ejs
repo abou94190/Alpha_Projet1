@@ -1,3 +1,4 @@
+<!-- views/resources.ejs -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -7,68 +8,29 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">Espace de Dépôt</a>
+        <!-- Other navbar items... -->
+    </nav>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <a class="navbar-brand" href="/files">Espace de Dépôt</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav">
-            <li class="nav-item">
-                <a class="nav-link" href="/files">Accueil</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/files/resources">Ressources</a>
-            </li>
+    <div class="container mt-4">
+        <h1>Ressources</h1>
+        <p>Voici les ressources disponibles :</p>
+
+        <ul class="list-group mb-4">
+            <% resources.forEach(resource => { %>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><%= resource.filename %></span>
+                    <div>
+                        <a href="/files/download/<%= resource._id %>" class="btn btn-info btn-sm">Télécharger</a>
+                    </div>
+                </li>
+            <% }); %>
         </ul>
-        <div class="ml-auto dropdown">
-            <button class="btn btn-secondary dropdown-toggle" type="button" id="userMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Bonjour, <%= user.cn %>
-            </button>
-            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userMenu">
-                <a class="dropdown-item" href="/logout">Se déconnecter</a>
-            </div>
-        </div>
     </div>
-</nav>
 
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <h1 class="text-center">Ressources disponibles</h1>
-
-            <!-- Liste des fichiers uploadés dynamiquement -->
-            <ul class="list-group mt-4">
-                <% if (files.length === 0) { %>
-                    <li class="list-group-item text-center">Aucune ressource disponible pour le moment.</li>
-                <% } else { %>
-                    <% files.forEach(file => { %>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <a href="/uploads/resources/<%= file %>" download><%= file %></a>
-                            <form action="/files/resources/delete/<%= file %>" method="POST" class="d-inline-block">
-                                <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-                            </form>
-                        </li>
-                    <% }); %>
-                <% } %>
-            </ul>
-
-            <!-- Formulaire d'upload -->
-            <h2 class="text-center mt-5">Uploader une nouvelle ressource</h2>
-            <form action="/files/resources/upload" method="POST" enctype="multipart/form-data" class="mt-3">
-                <div class="form-group">
-                    <label for="resourceFile">Choisissez un fichier :</label>
-                    <input type="file" class="form-control-file" id="resourceFile" name="resourceFile" required>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">Uploader</button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

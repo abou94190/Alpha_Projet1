@@ -46,8 +46,22 @@ router.get('/admin', isAuthenticated, async (req, res) => {
     }
 });
 
+// Route to display resources
+router.get('/resources', async (req, res) => {
+    try {
+        // Logic to retrieve resources, for example from the database
+        const resources = await File.find(); // Modify this to get the actual resources you want to show
 
+        // Render a view for resources
+        res.render('resources', { user: req.user, resources });
+    } catch (err) {
+        console.error(err);
+        req.flash('error', 'Erreur lors de la récupération des ressources.');
+        res.redirect('/files'); // Redirect if there's an error
+    }
+});
 // Route pour uploader un fichier
+// Route to upload a file
 router.post('/upload', upload.single('file'), async (req, res) => {
     if (!req.file) {
         req.flash('error', 'Erreur lors du chargement du fichier.');
@@ -56,11 +70,12 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
     const newFile = new File({
         filename: req.file.originalname,
-        uploadedBy: req.user._id, // Associez le fichier à l'utilisateur
+        uploadedBy: req.user._id, // Associate the file with the user
+        buffer: req.file.buffer, // Save the file's buffer
     });
 
     try {
-        await newFile.save(); // Enregistrer le fichier dans la base de données
+        await newFile.save(); // Save the file in the database
         req.flash('success', 'Fichier chargé avec succès!');
         res.redirect('/files');
     } catch (err) {
@@ -69,6 +84,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         res.redirect('/files');
     }
 });
+
 
 
 // Route pour supprimer un fichier
