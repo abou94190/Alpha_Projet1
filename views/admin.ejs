@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Gestion des fichiers</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="/admin">Admin</a>
+    <div class="ml-auto">
+      <a href="/logout" class="btn btn-danger">Déconnexion</a>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <h1>Gestion des fichiers par utilisateur</h1>
+    <% for (let user in userFiles) { %>
+      <h3>Fichiers de <%= user %> :</h3>
+      <ul class="list-group">
+        <% userFiles[user].forEach(file => { %>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span><%= file %></span>
+            <form action="/admin/delete/<%= user %>/<%= file %>" method="POST" class="ml-auto">
+              <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+            </form>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
