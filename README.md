@@ -1,6 +1,4 @@
-Bien sûr ! Voici un exemple de README détaillé sur l'installation de MongoDB. Ce README peut être utilisé comme guide pour les utilisateurs souhaitant installer MongoDB sur leur machine.
 
----
 
 # Guide d'Installation de MongoDB
 
@@ -117,4 +115,3 @@ Vous avez maintenant installé et configuré MongoDB sur votre machine. Vous pou
 
 ---
 
-N'hésitez pas à personnaliser ce README selon vos besoins ou à ajouter des sections supplémentaires si nécessaire !
