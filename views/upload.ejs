@@ -4,17 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uploader un projet</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f0f8ff; /* Couleur de fond bleu clair */
+        }
+        .btn-custom {
+            background-color: #3498db; /* Couleur personnalisée pour les boutons */
+            color: white;
+            border-radius: 5px; /* Coins arrondis */
+        }
+        .btn-custom:hover {
+            background-color: #2980b9; /* Couleur au survol */
+        }
+    </style>
 </head>
 <body>
-    <h1>Uploader un projet</h1>
-    <p>Bienvenue, <%= user.cn %>! Téléchargez votre fichier ici.</p>
+    <div class="container mt-5">
+        <h1 class="text-center">Uploader un projet</h1>
+        <p class="text-center">Bienvenue, <%= user.cn %>! Téléchargez votre fichier ici.</p>
 
-    <form action="/files/upload" method="POST" enctype="multipart/form-data">
-        <input type="file" name="projectFile" required />
-        <button type="submit">Télécharger</button>
-    </form>
+        <form action="/files/upload" method="POST" enctype="multipart/form-data" class="mt-4">
+            <div class="form-group">
+                <label for="projectFile">Choisissez un fichier :</label>
+                <input type="file" name="projectFile" id="projectFile" class="form-control-file" required />
+            </div>
+            <button type="submit" class="btn btn-custom btn-block">Télécharger</button> <!-- Bouton stylisé -->
+        </form>
 
-    <a href="/files">Voir les fichiers uploadés</a>
+        <div class="text-center mt-3">
+            <a href="/files" class="btn btn-link">Voir les fichiers uploadés</a> <!-- Lien stylisé -->
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
