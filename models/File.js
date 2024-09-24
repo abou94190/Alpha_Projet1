@@ -2,10 +2,11 @@ const mongoose = require('mongoose');
 
 const fileSchema = new mongoose.Schema({
     filename: { type: String, required: true },
-    uploadedBy: { type: String, required: true }, // sAMAccountName de l'utilisateur
-    uploadedByGroup: { type: String, required: true }, // Groupe de l'utilisateur
-    buffer: { type: Buffer, required: true }, // Champ buffer requis
-});
+    buffer: { type: Buffer, required: true },
+    uploadedBy: { type: String, required: true },
+    uploadedByOU: { type: String, required: true }, // Assurez-vous que cette propriété est bien ajoutée
+}, { timestamps: true });
 
 const File = mongoose.model('File', fileSchema);
+
 module.exports = File;

@@ -15,26 +15,73 @@ const upload = multer({ storage });
 // Route pour afficher la page des fichiers
 // Route pour afficher la page des fichiers
 // Route pour afficher la page des fichiers
+// Route pour afficher la page des fichiers
+// Route pour afficher la page des fichiers
 router.get('/', async (req, res) => {
     const user = req.user; // Utilisateur authentifié
     try {
+        // Extraire l'OU de l'utilisateur
+        const ouMatch = user.distinguishedName.match(/OU=([^,]+)/);
+        const userOU = ouMatch ? ouMatch[1] : null;
+
+        // Vérifiez si l'utilisateur a une OU valide
+        if (!userOU) {
+            return res.status(400).send('Vous devez appartenir à une OU pour voir les fichiers.');
+        }
+
         let files;
         if (user.isAdmin) {
-            files = await File.find(); // Admins can see all files
+            files = await File.find(); // Les administrateurs peuvent voir tous les fichiers
         } else {
-            // Retrieve files only uploaded by the user or shared with their group
+            // Récupérer les fichiers uploadés par l'utilisateur ou partagés avec leur OU
             files = await File.find({
                 $or: [
-                    { uploadedBy: user._id }, // Files uploaded by the user
-                    { uploadedByGroup: user.memberOf ? user.memberOf[0] : '' } // Adjust based on your group logic
+                    { uploadedBy: user.sAMAccountName }, // Fichiers uploadés par l'utilisateur
+                    { uploadedByOU: userOU } // Fichiers partagés avec l'OU de l'utilisateur
                 ]
             });
         }
-        res.render('files', { user, files }); // Render the view with the files
+        res.render('files', { user, files }); // Rendre la vue avec les fichiers
     } catch (err) {
         console.error(err);
         req.flash('error', 'Erreur lors de la récupération des fichiers.');
         res.redirect('/files');
+    }
+});
+
+router.get('/files', async (req, res) => {
+    try {
+        const user = req.user;
+
+        // Assurez-vous que l'utilisateur est authentifié
+        if (!user) {
+            return res.status(403).send('Accès refusé');
+        }
+
+        // Extraire l'OU de l'utilisateur
+        const ouMatch = user.distinguishedName.match(/OU=([^,]+)/);
+        const userOU = ouMatch ? ouMatch[1] : null;
+
+        console.log('Utilisateur :', user.sAMAccountName);
+        console.log('OU :', userOU);
+
+        if (!userOU) {
+            return res.status(400).send('Vous devez appartenir à une OU pour voir les fichiers.');
+        }
+
+        // Récupérer les fichiers
+        const files = await File.find({
+            $or: [
+                { uploadedBy: user.sAMAccountName },
+                { uploadedByOU: userOU }
+            ]
+        });
+
+        console.log('Fichiers récupérés :', files);
+        res.render('files', { files, user });
+    } catch (error) {
+        console.error('Erreur lors de la récupération des fichiers :', error);
+        res.status(500).send('Erreur lors de la récupération des fichiers');
     }
 });
 
@@ -67,35 +114,37 @@ router.get('/resources', async (req, res) => {
 });
 
 router.post('/upload', upload.single('file'), async (req, res) => {
-    console.log("User Object:", req.user);
-
-    if (!req.file) {
-        req.flash('error', 'Erreur lors du chargement du fichier.');
-        return res.redirect('/files');
-    }
-
-    if (!req.user || !req.user.sAMAccountName) {
-        console.error("User is not authenticated or user ID is missing");
-        req.flash('error', 'Erreur d\'authentification. Veuillez vous reconnecter.');
-        return res.redirect('/login');
-    }
-
-    // Créez un nouvel objet File
-    const newFile = new File({
-        filename: req.file.originalname,
-        uploadedBy: req.user.sAMAccountName, // Utilisez sAMAccountName comme identifiant
-        uploadedByGroup: (req.user.memberOf && req.user.memberOf.length > 0) ? req.user.memberOf[0] : 'DefaultGroup', // Gérer le groupe
-        buffer: req.file.buffer, // Assurez-vous que vous passez le buffer ici
-    });
-
     try {
+        const user = req.user; // L'utilisateur doit être authentifié
+
+        if (!user) {
+            return res.status(403).send('Accès refusé');
+        }
+
+        // Extraire l'OU à partir du distinguishedName
+        const ouMatch = user.distinguishedName.match(/OU=([^,]+)/); // Cela va chercher la première OU
+        const userOU = ouMatch ? ouMatch[1] : null;
+
+        if (!userOU) {
+            return res.status(400).send('Vous devez appartenir à une OU pour uploader un fichier.');
+        }
+
+        // Création d'un nouvel objet File
+        const newFile = new File({
+            filename: req.file.originalname, // Nom du fichier
+            buffer: req.file.buffer, // Contenu du fichier
+            uploadedBy: user.sAMAccountName, // Nom de l'utilisateur qui upload le fichier
+            uploadedByOU: userOU, // OU de l'utilisateur
+        });
+
+        // Sauvegarde du fichier
         await newFile.save();
-        req.flash('success', 'Fichier chargé avec succès!');
-        res.redirect('/files');
-    } catch (err) {
-        console.error("Error saving file:", err);
-        req.flash('error', 'Erreur lors de l\'enregistrement du fichier.');
-        res.redirect('/files');
+
+        console.log('Fichier uploadé avec succès :', newFile);
+        res.redirect('/files'); // Redirigez vers la page des fichiers
+    } catch (error) {
+        console.error('Erreur lors de l\'upload du fichier :', error);
+        res.status(500).send('Erreur lors de l\'upload du fichier');
     }
 });
 

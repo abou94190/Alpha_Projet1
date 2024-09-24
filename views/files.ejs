@@ -34,21 +34,17 @@
 
     <div class="container mt-4">
         <h1>Fichiers déposés</h1>
-        <p>Voici les fichiers déposés par le groupe.</p>
+        <p>Voici les fichiers que vous avez déposés ou qui ont été déposés par les membres de votre groupe.</p>
 
         <ul class="list-group mb-4">
             <% files.forEach(file => { %>
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <span><%= file.filename %></span>
-                    
                     <div>
                         <form action="/files/delete/<%= file._id %>" method="POST" style="display:inline;">
                             <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Voulez-vous vraiment supprimer ce fichier ?');">Supprimer</button>
                         </form>
-                        
-                        <% if (user.isAdmin) { %> <!-- Vérification si l'utilisateur est admin -->
-                            <a href="/files/download/<%= file._id %>" class="btn btn-info btn-sm">Télécharger</a>
-                        <% } %>
+                        <a href="/files/download/<%= file._id %>" class="btn btn-info btn-sm">Télécharger</a>
                     </div>
                 </li>
             <% }); %>
