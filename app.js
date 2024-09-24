@@ -62,14 +62,21 @@ const OPTS = {
 };
 
 passport.use(new LdapStrategy(OPTS, (user, done) => {
+  console.log('Utilisateur LDAP:', user);
+
   if (user) {
-    console.log('Utilisateur authentifié :', user);
-    return done(null, user);
+      // Assurez-vous que memberOf est un tableau
+      const memberOfArray = Array.isArray(user.memberOf) ? user.memberOf : [user.memberOf];
+      const isAdmin = memberOfArray.includes('CN=Admin,DC=workshop,DC=local');
+
+      console.log(`Utilisateur ${user.sAMAccountName} est admin: ${isAdmin}`);
+      return done(null, { ...user, isAdmin });
   } else {
-    console.log('Échec de l\'authentification');
-    return done(null, false, { message: 'Nom d’utilisateur ou mot de passe incorrect' });
+      return done(null, false, { message: 'Nom d’utilisateur ou mot de passe incorrect' });
   }
 }));
+
+
 
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
@@ -87,6 +94,28 @@ const fileRoutes = require('./routes/file');
 const connectDB = require('./DB/db');
 app.use('/', authRoutes);
 app.use('/files', fileRoutes);
+
+app.post('/login', passport.authenticate('ldapauth', {
+  failureRedirect: '/login',
+  failureFlash: true
+}), (req, res) => {
+  console.log(`Utilisateur connecté: ${req.user.sAMAccountName}`);
+  if (req.user.isAdmin) {
+      console.log(`Redirection admin pour l'utilisateur ${req.user.sAMAccountName}`);
+      return res.redirect('/files/admin'); // Redirige vers la page admin
+  }
+  console.log(`Redirection utilisateur pour l'utilisateur ${req.user.sAMAccountName}`);
+  res.redirect('/files'); // Redirige vers la page des fichiers pour les autres utilisateurs
+});
+
+
+app.get('/redirect-after-login', (req, res) => {
+  // Vérifiez si l'utilisateur est un admin
+  if (req.user.isAdmin) {
+      return res.redirect('/files/admin'); // Redirige vers la page admin
+  }
+  res.redirect('/files'); // Redirige vers la page des fichiers pour les autres utilisateurs
+});
 
 // Serveur statique pour les fichiers CSS et JS
 app.use(express.static(path.join(__dirname, 'public')));

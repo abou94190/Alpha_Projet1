@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Fichiers Administrateur</title>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Fichiers Uploadés (Administrateur)</h1>
+
+        <% if (messages.success && messages.success.length > 0) { %>
+            <div class="alert alert-success">
+                <%= messages.success %>
+            </div>
+        <% } %>
+        <% if (messages.error && messages.error.length > 0) { %>
+            <div class="alert alert-danger">
+                <%= messages.error %>
+            </div>
+        <% } %>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Nom du Fichier</th>
+                    <th>Date d'Upload</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% files.forEach(file => { %>
+                    <tr>
+                        <td><%= file.filename %></td>
+                        <td><%= new Date(file.uploadDate).toLocaleDateString('fr-FR') %></td> <!-- Formatage de la date -->
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+
+        <a href="/files" class="btn btn-primary">Retourner à la page des fichiers</a>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
