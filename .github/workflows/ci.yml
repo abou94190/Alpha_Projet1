@@ -17,7 +17,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x, 18.x]  # Les versions de Node.js à tester
+        node-version: [16.x, 18.x, 7.x,]  # Les versions de Node.js à tester
 
     steps:
     - name: Checkout code
