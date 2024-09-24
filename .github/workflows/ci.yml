@@ -3,10 +3,10 @@ name: Node.js CI
 on:
   push:
     branches: 
-      - branche_abou  # Changez ceci pour la branche sur laquelle vous souhaitez que le workflow soit déclenché
+      - branche_abou
   pull_request:
     branches:
-      - branche_abou  # Changez ceci pour la branche cible de vos pull requests
+      - branche_abou
 
 jobs:
   build:
@@ -19,11 +19,10 @@ jobs:
       - name: Installer Node.js
         uses: actions/setup-node@v2
         with:
-          # Ne spécifiez pas de version, ce qui utilisera la dernière version stable par défaut
-          # node-version: '14'  # Supprimé pour utiliser la dernière version
+          node-version: '18'  # Spécifiez une version LTS de Node.js
 
       - name: Installer les dépendances
-        run: npm install  # Installe les dépendances du fichier package.json
+        run: npm install
 
       - name: Exécuter les tests
-        run: npm test  # Exécute les tests définis dans package.json
+        run: npm test
