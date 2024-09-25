@@ -13,7 +13,6 @@ const dbURI = 'mongodb://127.0.0.1:27017/mon_atelier';
 
 // Connect to MongoDB
 mongoose.connect(dbURI, {
-   
     serverSelectionTimeoutMS: 20000 // Connection timeout
 })
 .then(() => {
@@ -62,7 +61,7 @@ passport.use(new LdapStrategy(OPTS, (user, done) => {
   console.log('Utilisateur LDAP:', user);
 
   if (user) {
-      // Assurez-vous que memberOf est un tableau et qu'il contient des valeurs valides
+      // Assurez-vous que memberOf est un tableau
       const memberOfArray = Array.isArray(user.memberOf) ? user.memberOf : (user.memberOf ? [user.memberOf] : []);
       const isAdmin = memberOfArray.includes('CN=Admin,DC=workshop,DC=local');
       const isProf = memberOfArray.includes('CN=Prof,DC=workshop,DC=local'); // Assurez-vous que c'est le bon DN pour les professeurs
@@ -70,11 +69,10 @@ passport.use(new LdapStrategy(OPTS, (user, done) => {
       console.log(`Utilisateur ${user.sAMAccountName} est admin: ${isAdmin}`);
       console.log(`Utilisateur ${user.sAMAccountName} est prof: ${isProf}`);
       
-      // Incluez un identifiant utilisateur valide
       return done(null, { 
           ...user, 
           isAdmin, 
-          isProf, // Ajoutez isProf ici
+          isProf,
           memberOf: memberOfArray 
       });
   } else {
@@ -103,20 +101,17 @@ app.get('/files/download/:id', async (req, res) => {
     const fileId = req.params.id;
 
     try {
-        // Find the file in the database by ID
         const file = await File.findById(fileId);
 
         if (!file) {
             return res.status(404).send('File not found');
         }
 
-        // Set the response headers to prompt a file download
         res.set({
             'Content-Type': 'application/octet-stream',
             'Content-Disposition': `attachment; filename="${file.filename}"`,
         });
 
-        // Send the file buffer as response
         res.send(file.buffer); // Assuming the binary data is stored in the 'buffer' field
     } catch (err) {
         console.error(err);
@@ -124,6 +119,7 @@ app.get('/files/download/:id', async (req, res) => {
     }
 });
 
+// Login route
 app.post('/login', passport.authenticate('ldapauth', {
   failureRedirect: '/login',
   failureFlash: true
@@ -133,7 +129,7 @@ app.post('/login', passport.authenticate('ldapauth', {
   if (req.user.isAdmin) {
       console.log(`Redirection admin pour l'utilisateur ${req.user.sAMAccountName}`);
       return res.redirect('/files/admin'); // Redirige vers la page admin
-  } else if (req.user.isProf) { // Utilisez isProf ici
+  } else if (req.user.isProf) {
       console.log(`Redirection prof pour l'utilisateur ${req.user.sAMAccountName}`);
       return res.redirect('/files/resources'); // Redirige vers la page des ressources pour les profs
   }
@@ -141,8 +137,6 @@ app.post('/login', passport.authenticate('ldapauth', {
   console.log(`Redirection utilisateur pour l'utilisateur ${req.user.sAMAccountName}`);
   res.redirect('/files'); // Redirige vers la page des fichiers pour les autres utilisateurs
 });
-
-
 
 // Static server for CSS and JS files
 app.use(express.static(path.join(__dirname, 'public')));
