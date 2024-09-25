@@ -1,4 +1,3 @@
-// routes/files.js
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
@@ -22,8 +21,9 @@ router.get('/', async (req, res) => {
     
     try {
         // Assurez-vous que memberOf est un tableau
-        const userGroups = Array.isArray(user.memberOf) ? user.memberOf.map(g => g.split('=')[1]) : [];
+        const userGroups = Array.isArray(user.memberOf) ? user.memberOf.map(g => g.split(',')[0].split('=')[1]) : [];
         let files;
+
         if (user.isAdmin) {
             files = await File.find(); // Les administrateurs peuvent voir tous les fichiers
         } else {
@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
             files = await File.find({
                 $or: [
                     { uploadedBy: user.sAMAccountName }, // Fichiers uploadés par l'utilisateur
-                    { uploadedByGroup: { $in: userGroups } } // Fichiers partagés avec les groupes de l'utilisateur
+                    { uploadedByGroup: { $in: user.memberOf } } // Fichiers partagés avec les groupes de l'utilisateur
                 ]
             });
         }
@@ -53,6 +53,7 @@ router.get('/resources', async (req, res) => {
         if (user.isProf === false) {
             return res.status(403).send('Accès refusé');
         }
+
         // Récupérer les ressources en fonction de l'OU sélectionnée
         if (selectedOU) {
             resources = await File.find({ uploadedByOU: selectedOU }); // Filtrer les ressources par OU
@@ -68,7 +69,6 @@ router.get('/resources', async (req, res) => {
     }
 });
 
-// routes/files.js
 // Route pour uploader un fichier
 router.post('/upload', upload.single('file'), async (req, res) => {
     try {
@@ -101,7 +101,6 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         res.status(500).send('Erreur lors de l\'upload du fichier');
     }
 });
-
 
 // Route pour supprimer un fichier
 router.post('/delete/:id', async (req, res) => {
