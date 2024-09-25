@@ -5,10 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <title>Fichiers Administrateur</title>
+    <style>
+        body {
+            background-color: #e8f5e9; /* Fond bleu très clair */
+        }
+        .main-title {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #007bff; /* Couleur du texte */
+            font-weight: bold;
+            font-size: 28px;
+        }
+        .sub-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #6c757d; /* Couleur du texte pour le sous-titre */
+            font-size: 20px;
+        }
+        .btn-custom {
+            background-color: #007bff; /* Couleur personnalisée pour le bouton */
+            border: none;
+            transition: transform 0.2s; /* Animation de zoom */
+        }
+        .btn-custom:hover {
+            transform: scale(1.05); /* Zoom au survol */
+            background-color: #0056b3; /* Couleur plus foncée au survol */
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
-        <h1>Fichiers Uploadés (Administrateur)</h1>
+        <h1 class="main-title">EduShare</h1> <!-- Titre du projet -->
+        <h2 class="sub-title">Mode Enseignant</h2> <!-- Sous-titre ajouté -->
 
         <% if (messages.success && messages.success.length > 0) { %>
             <div class="alert alert-success">
@@ -38,7 +66,7 @@
             </tbody>
         </table>
 
-        <a href="/files" class="btn btn-primary">Retourner à la page des fichiers</a>
+        <a href="/files" class="btn btn-custom">Retourner à la page des fichiers</a> <!-- Bouton personnalisé -->
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

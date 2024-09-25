@@ -3,18 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uploader un projet</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <title>Uploader un projet - EduShare</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #e8f5e9; /* Fond bleu très clair */
+        }
+        .project-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #007bff; /* Couleur du texte */
+            font-weight: bold;
+            font-size: 24px;
+        }
+        .btn-custom {
+            background-color: #007bff; /* Couleur personnalisée pour le bouton */
+            border: none;
+            transition: transform 0.2s; /* Animation de zoom */
+        }
+        .btn-custom:hover {
+            transform: scale(1.05); /* Zoom au survol */
+            background-color: #0056b3; /* Couleur plus foncée au survol */
+        }
+    </style>
 </head>
 <body>
-    <h1>Uploader un projet</h1>
-    <p>Bienvenue, <%= user.cn %>! Téléchargez votre fichier ici.</p>
+    <div class="container mt-4">
+        <h1 class="project-title">EduShare</h1> <!-- Titre du projet -->
+        <p>Bienvenue, <%= user.cn %>! Téléchargez votre fichier ici.</p>
 
-    <form action="/files/upload" method="POST" enctype="multipart/form-data">
-        <input type="file" name="projectFile" required />
-        <button type="submit">Télécharger</button>
-    </form>
+        <form action="/files/upload" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <input type="file" name="projectFile" class="form-control-file" required />
+            </div>
+            <button type="submit" class="btn btn-custom">Télécharger</button> <!-- Bouton personnalisé -->
+        </form>
 
-    <a href="/files">Voir les fichiers uploadés</a>
+        <div class="mt-3">
+            <a href="/files" class="btn btn-secondary">Voir les fichiers uploadés</a> <!-- Lien stylisé -->
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
