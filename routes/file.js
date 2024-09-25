@@ -46,10 +46,13 @@ router.get('/', async (req, res) => {
 
 /// Route pour afficher les ressources
 router.get('/resources', async (req, res) => {
+    const user = req.user;
     try {
         const selectedOU = req.query.ou || ''; // Récupérer l'OU sélectionnée
         let resources;
-
+        if (user.isProf === false) {
+            return res.status(403).send('Accès refusé');
+        }
         // Récupérer les ressources en fonction de l'OU sélectionnée
         if (selectedOU) {
             resources = await File.find({ uploadedByOU: selectedOU }); // Filtrer les ressources par OU
