@@ -2,7 +2,9 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const File = require('../models/File'); // Importer le modèle
+const exceljs = require('exceljs'); // Importer exceljs pour générer des fichiers Excel
 const isAuthenticated = require('../middleware/authMiddleware');
+const { getLdapGroupOU } = require('../ldapservice/ldapService');
 
 // Utiliser le middleware d'authentification
 router.use(isAuthenticated);
@@ -68,6 +70,7 @@ router.get('/resources', async (req, res) => {
         res.redirect('/files'); // Rediriger en cas d'erreur
     }
 });
+
 // Route pour donner une note à un groupe
 router.post('/resources/group-notes', async (req, res) => {
     const { resourceId, groupName, note } = req.body; // Récupérer les données du formulaire
@@ -92,8 +95,6 @@ router.post('/resources/group-notes', async (req, res) => {
         res.redirect('/files/resources');
     }
 });
-
-
 
 // Route pour supprimer une note d'un groupe
 router.post('/resources/delete-note', async (req, res) => {
@@ -165,4 +166,51 @@ router.post('/delete/:id', async (req, res) => {
     res.redirect('/files');
 });
 
+// Route pour télécharger les notes des groupes
+router.post('/resources/download-notes', async (req, res) => {
+    try {
+        const files = await File.find(); // Récupérer toutes les ressources
+
+        // Créer un nouveau workbook
+        const workbook = new exceljs.Workbook();
+        const worksheet = workbook.addWorksheet('Notes des groupes');
+
+        // Ajouter des en-têtes de colonne
+        worksheet.columns = [
+            { header: 'Nom de la ressource', key: 'filename', width: 30 },
+            { header: 'Groupe', key: 'group', width: 30 },
+            { header: 'Note', key: 'note', width: 10 },
+        ];
+
+        // Parcourir chaque ressource pour extraire les notes
+        for (const file of files) {
+            if (file.notes) {
+                for (const [groupName, note] of file.notes) {
+                    // Récupérer les OUs des membres via LDAP
+
+                    worksheet.addRow({
+                        filename: file.filename,
+                        group: groupName,
+                        note: note
+                    });
+                }
+            }
+        }
+
+        // Configurer la réponse pour télécharger le fichier
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=notes.xlsx');
+
+        // Écrire le fichier Excel dans la réponse
+        await workbook.xlsx.write(res);
+        res.end();
+    } catch (error) {
+        console.error('Erreur lors de la génération du fichier Excel:', error);
+        res.status(500).send('Erreur lors du téléchargement des notes');
+    }
+});
+
+
+
+// Exporter le routeur
 module.exports = router;
