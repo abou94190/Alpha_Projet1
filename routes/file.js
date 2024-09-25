@@ -24,11 +24,6 @@ router.get('/', async (req, res) => {
         const ouMatch = user.distinguishedName.match(/OU=([^,]+)/);
         const userOU = ouMatch ? ouMatch[1] : null;
 
-        // Vérifiez si l'utilisateur a une OU valide
-        if (!userOU) {
-            return res.status(400).send('Vous devez appartenir à une OU pour voir les fichiers.');
-        }
-
         let files;
         if (user.isAdmin) {
             files = await File.find(); // Les administrateurs peuvent voir tous les fichiers
