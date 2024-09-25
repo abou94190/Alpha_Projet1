@@ -44,21 +44,31 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Route pour afficher les ressources
+/// Route pour afficher les ressources
 router.get('/resources', async (req, res) => {
+    const user = req.user;
     try {
-        // Logic to retrieve resources
-        const resources = await File.find(); // Modify this to get the actual resources you want to show
+        const selectedOU = req.query.ou || ''; // Récupérer l'OU sélectionnée
+        let resources;
+        if (user.isProf === false) {
+            return res.status(403).send('Accès refusé');
+        }
+        // Récupérer les ressources en fonction de l'OU sélectionnée
+        if (selectedOU) {
+            resources = await File.find({ uploadedByOU: selectedOU }); // Filtrer les ressources par OU
+        } else {
+            resources = await File.find(); // Si aucune OU n'est sélectionnée, afficher toutes les ressources
+        }
 
-        // Render a view for resources
-        res.render('resources', { user: req.user, resources });
+        res.render('resources', { user: req.user, resources, selectedOU }); // Passer l'OU sélectionnée à la vue
     } catch (err) {
         console.error(err);
         req.flash('error', 'Erreur lors de la récupération des ressources.');
-        res.redirect('/files'); // Redirect if there's an error
+        res.redirect('/files'); // Rediriger en cas d'erreur
     }
 });
 
+// routes/files.js
 // Route pour uploader un fichier
 router.post('/upload', upload.single('file'), async (req, res) => {
     try {
@@ -68,12 +78,17 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             return res.status(403).send('Accès refusé');
         }
 
+        // Extraction de l'OU du DN de l'utilisateur
+        const ouMatch = user.dn.match(/OU=([^,]+)/); // Capture l'OU du DN
+        const uploadedByOU = ouMatch ? ouMatch[1] : 'Inconnu'; // Récupère le nom de l'OU
+
         // Création d'un nouvel objet File
         const newFile = new File({
             filename: req.file.originalname, // Nom du fichier
             buffer: req.file.buffer, // Contenu du fichier
             uploadedBy: user.sAMAccountName, // Nom de l'utilisateur qui upload le fichier
-            uploadedByGroup: user.memberOf // Liste des groupes de l'utilisateur
+            uploadedByGroup: user.memberOf, // Liste des groupes de l'utilisateur
+            uploadedByOU: uploadedByOU // OU extraite
         });
 
         // Sauvegarde du fichier
@@ -86,6 +101,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         res.status(500).send('Erreur lors de l\'upload du fichier');
     }
 });
+
 
 // Route pour supprimer un fichier
 router.post('/delete/:id', async (req, res) => {
