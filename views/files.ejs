@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -44,6 +45,18 @@
                         <a href="/files/download/<%= file._id %>" class="btn btn-info btn-sm">Télécharger</a>
                     </div>
                 </li>
+                <!-- Affichage des notes des groupes -->
+                <ul class="list-group mt-2">
+                    <% if (file.notes) { %>
+                        <% for (const [groupName, note] of file.notes) { %>
+                            <li class="list-group-item">
+                                <strong><%= groupName %> :</strong> <%= note %>
+                            </li>
+                        <% } %>
+                    <% } else { %>
+                        <li class="list-group-item">Aucune note disponible</li>
+                    <% } %>
+                </ul>
             <% }); %>
         </ul>
 

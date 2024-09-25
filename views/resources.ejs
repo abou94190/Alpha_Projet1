@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ressources</title>
+    <title>Ressources - Professeur</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="/files/resources">Ressources</a> <!-- Affichage de "Ressources" à gauche -->
+        <a class="navbar-brand" href="/files/resources">Ressources</a>
         <div class="ml-auto dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="userMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Bonjour, <%= user.cn %>
@@ -42,6 +42,7 @@
                 <tr>
                     <th>Nom de la ressource</th>
                     <th>Groupe de l'utilisateur</th>
+                    <th>Notes</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -52,8 +53,8 @@
                         <td>
                             <% 
                                 if (Array.isArray(resource.uploadedByGroup) && resource.uploadedByGroup.length > 0) {
-                                    const groupString = resource.uploadedByGroup[0]; // Prendre le premier élément
-                                    const groupName = groupString.replace('CN=', '').split(',')[0]; // Enlever 'CN=' et prendre la première partie
+                                    const groupString = resource.uploadedByGroup[0]; 
+                                    const groupName = groupString.replace('CN=', '').split(',')[0];
                                     %><%= groupName %><%
                                 } else {
                                     %>Inconnu<%
@@ -61,7 +62,32 @@
                             %>
                         </td>
                         <td>
+                            <% if (resource.notes) { %>
+                                <% for (const [groupName, note] of resource.notes) { %>
+                                    <strong><%= groupName %> :</strong> <%= note %>
+                                    <!-- Formulaire pour supprimer la note -->
+                                    <form action="/files/resources/delete-note" method="POST" style="display:inline;">
+                                        <input type="hidden" name="resourceId" value="<%= resource._id %>">
+                                        <input type="hidden" name="groupName" value="<%= groupName %>">
+                                        <button type="submit" class="btn btn-danger btn-sm ml-1" onclick="return confirm('Voulez-vous vraiment supprimer cette note ?');">Supprimer</button>
+                                    </form>
+                                    <br>
+                                <% } %>
+                            <% } else { %>
+                                Aucune note disponible
+                            <% } %>
+                        </td>
+                        <td>
                             <a href="/files/download/<%= resource._id %>" class="btn btn-info btn-sm">Télécharger</a>
+                            <!-- Formulaire pour donner une note -->
+                            <form class="mt-2" action="/files/resources/group-notes" method="POST">
+                                <input type="hidden" name="resourceId" value="<%= resource._id %>">
+                                <div class="form-group">
+                                    <input type="text" class="form-control" name="groupName" placeholder="Appréciation" required>
+                                    <input type="number" class="form-control mt-1" name="note" placeholder="Note" min="0" max="20" required>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-sm">Donner une note au groupe</button>
+                            </form>
                         </td>
                     </tr>
                 <% }); %>
