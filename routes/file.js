@@ -12,13 +12,17 @@ router.use(isAuthenticated);
 const storage = multer.memoryStorage(); // Stockage en mémoire
 const upload = multer({ storage });
 
-// Route pour afficher la page des fichiers
+/// Route pour afficher la page des fichiers
 router.get('/', async (req, res) => {
     const user = req.user; // Utilisateur authentifié
+    if (user.isProf) {
+        // Redirige les professeurs vers la page des ressources
+        return res.redirect('/files/resources');
+    }
+    
     try {
         // Assurez-vous que memberOf est un tableau
         const userGroups = Array.isArray(user.memberOf) ? user.memberOf.map(g => g.split('=')[1]) : [];
-
         let files;
         if (user.isAdmin) {
             files = await File.find(); // Les administrateurs peuvent voir tous les fichiers

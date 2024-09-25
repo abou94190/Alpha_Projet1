@@ -59,22 +59,27 @@ const OPTS = {
 };
 
 passport.use(new LdapStrategy(OPTS, (user, done) => {
-    console.log('Utilisateur LDAP:', user);
+  console.log('Utilisateur LDAP:', user);
 
-    if (user) {
-        const memberOfArray = Array.isArray(user.memberOf) ? user.memberOf : (user.memberOf ? [user.memberOf] : []);
-        const isAdmin = memberOfArray.includes('CN=Admin,DC=workshop,DC=local');
+  if (user) {
+      // Assurez-vous que memberOf est un tableau et qu'il contient des valeurs valides
+      const memberOfArray = Array.isArray(user.memberOf) ? user.memberOf : (user.memberOf ? [user.memberOf] : []);
+      const isAdmin = memberOfArray.includes('CN=Admin,DC=workshop,DC=local');
+      const isProf = memberOfArray.includes('CN=Prof,DC=workshop,DC=local'); // Assurez-vous que c'est le bon DN pour les professeurs
 
-        console.log(`Utilisateur ${user.sAMAccountName} est admin: ${isAdmin}`);
-        
-        return done(null, { 
-            ...user, 
-            isAdmin, 
-            memberOf: memberOfArray 
-        });
-    } else {
-        return done(null, false, { message: 'Nom d’utilisateur ou mot de passe incorrect' });
-    }
+      console.log(`Utilisateur ${user.sAMAccountName} est admin: ${isAdmin}`);
+      console.log(`Utilisateur ${user.sAMAccountName} est prof: ${isProf}`);
+      
+      // Incluez un identifiant utilisateur valide
+      return done(null, { 
+          ...user, 
+          isAdmin, 
+          isProf, // Ajoutez isProf ici
+          memberOf: memberOfArray 
+      });
+  } else {
+      return done(null, false, { message: 'Nom d’utilisateur ou mot de passe incorrect' });
+  }
 }));
 
 passport.serializeUser((user, done) => done(null, user));
@@ -120,25 +125,24 @@ app.get('/files/download/:id', async (req, res) => {
 });
 
 app.post('/login', passport.authenticate('ldapauth', {
-    failureRedirect: '/login',
-    failureFlash: true
+  failureRedirect: '/login',
+  failureFlash: true
 }), (req, res) => {
-    console.log(`Utilisateur connecté: ${req.user.sAMAccountName}`);
-    if (req.user.isAdmin) {
-        console.log(`Redirection admin pour l'utilisateur ${req.user.sAMAccountName}`);
-        return res.redirect('/files/admin'); // Redirect to admin page
-    }
-    console.log(`Redirection utilisateur pour l'utilisateur ${req.user.sAMAccountName}`);
-    res.redirect('/files'); // Redirect to files page for other users
+  console.log(`Utilisateur connecté: ${req.user.sAMAccountName}`);
+  
+  if (req.user.isAdmin) {
+      console.log(`Redirection admin pour l'utilisateur ${req.user.sAMAccountName}`);
+      return res.redirect('/files/admin'); // Redirige vers la page admin
+  } else if (req.user.isProf) { // Utilisez isProf ici
+      console.log(`Redirection prof pour l'utilisateur ${req.user.sAMAccountName}`);
+      return res.redirect('/files/resources'); // Redirige vers la page des ressources pour les profs
+  }
+  
+  console.log(`Redirection utilisateur pour l'utilisateur ${req.user.sAMAccountName}`);
+  res.redirect('/files'); // Redirige vers la page des fichiers pour les autres utilisateurs
 });
 
-app.get('/redirect-after-login', (req, res) => {
-    // Check if the user is an admin
-    if (req.user.isAdmin) {
-        return res.redirect('/files/admin'); // Redirect to admin page
-    }
-    res.redirect('/files'); // Redirect to files page for other users
-});
+
 
 // Static server for CSS and JS files
 app.use(express.static(path.join(__dirname, 'public')));
