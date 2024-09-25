@@ -26,9 +26,9 @@
         <!-- Formulaire pour sélectionner l'OU -->
         <form id="ouSelectForm" method="GET" action="/files/resources">
             <div class="form-group">
-                <label for="ouSelect">Sélectionnez une Unité Organisationnelle :</label>
+                <label for="ouSelect">Sélectionnez une Classe :</label>
                 <select class="form-control" id="ouSelect" name="ou" onchange="document.getElementById('ouSelectForm').submit();">
-                    <option value="">-- Choisissez une OU --</option>
+                    <option value="">-- Choisissez une classe --</option>
                     <% const ous = [...new Set(resources.map(resource => resource.uploadedByOU))]; // Créez une liste unique d'OUs %>
                     <% ous.forEach(ou => { %>
                         <option value="<%= ou %>" <%= ou === selectedOU ? 'selected' : '' %>><%= ou %></option>
