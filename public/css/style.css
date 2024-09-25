@@ -1,124 +1,94 @@
-/* Style global */
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
-  margin: 0;
-  padding: 0;
+  background-color: #e8f5e9; /* Fond bleu très clair */
 }
 
-.container {
-  width: 80%;
-  margin: 0 auto;
-  padding: 20px;
-  background: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-top: 50px;
+.project-title {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #007bff; /* Couleur du texte */
+  font-weight: bold;
+  font-size: 24px;
 }
 
-/* Barre de navigation */
-nav {
-  background-color: #333;
-  overflow: hidden;
-}
-
-nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-nav ul li {
-  float: left;
-}
-
-nav ul li a {
-  color: white;
-  text-decoration: none;
-  padding: 14px 20px;
-  display: block;
-}
-
-nav ul li a:hover {
-  background-color: #575757;
-}
-
-/* Menu utilisateur avec déconnexion */
-.user-menu {
-  float: right;
-  position: relative;
-}
-
-.user-menu a {
-  color: white;
-  text-decoration: none;
-  padding: 14px 20px;
-  display: block;
-  background-color: #333;
-}
-
-.user-menu a:hover {
-  background-color: #575757;
-}
-
-.user-menu .dropdown {
-  display: none;
-  position: absolute;
-  right: 0;
-  background-color: white;
-  min-width: 160px;
-  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
-  z-index: 1;
-}
-
-.user-menu .dropdown a {
-  color: black;
-  padding: 12px 16px;
-  display: block;
-  text-align: left;
-}
-
-.user-menu .dropdown a:hover {
-  background-color: #f1f1f1;
-}
-
-/* Afficher le menu déroulant lors du hover */
-.user-menu:hover .dropdown {
-  display: block;
-}
-
-/* Style pour la liste des fichiers */
-ul.file-list {
-  list-style: none;
-  padding: 0;
-}
-
-ul.file-list li {
-  margin: 10px 0;
-  background: #fafafa;
-  padding: 10px;
-  border: 1px solid #ddd;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-ul.file-list li a {
-  text-decoration: none;
-  color: #333;
-}
-
-ul.file-list li a:hover {
-  text-decoration: underline;
-}
-
-ul.file-list li button {
-  background-color: #e74c3c;
-  color: white;
+.btn-custom {
+  background-color: #007bff; /* Couleur personnalisée pour le bouton */
   border: none;
-  padding: 5px 10px;
-  cursor: pointer;
+  transition: transform 0.2s; /* Animation de zoom */
 }
 
-ul.file-list li button:hover {
-  background-color: #c0392b;
+.btn-custom:hover {
+  transform: scale(1.05); /* Zoom au survol */
+  background-color: #b4c9df; /* Couleur plus foncée au survol */
+}
+
+/* Autres styles globaux peuvent être ajoutés ici */
+body {
+  background-color: #e8f5e9; /* Fond bleu très clair */
+}
+
+.navbar-brand {
+  color: #007bff; /* Couleur du texte de la marque */
+}
+
+.project-title {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #007bff; /* Couleur du texte */
+  font-weight: bold;
+  font-size: 24px;
+}
+
+.btn-custom {
+  background-color: #007bff; /* Couleur personnalisée pour le bouton */
+  border: none;
+  transition: transform 0.2s, background-color 0.3s; /* Animation de zoom et de couleur */
+}
+
+.btn-custom:hover {
+  transform: scale(1.05); /* Zoom au survol */
+  background-color: #0056b3; /* Couleur plus foncée au survol */
+}
+body {
+  background-color: #e8f5e9; /* Fond bleu très clair */
+}
+
+.project-title {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #007bff; /* Couleur du texte */
+  font-weight: bold;
+  font-size: 24px;
+}
+
+.btn-custom {
+  background-color: #007bff; /* Couleur personnalisée pour le bouton */
+  border: none;
+  transition: transform 0.2s; /* Animation de zoom */
+}
+
+.btn-custom:hover {
+  transform: scale(1.05); /* Zoom au survol */
+  background-color: #0056b3; /* Couleur plus foncée au survol */
+}
+body {
+  background-color: #e8f5e9; /* Fond bleu très clair */
+}
+
+.project-title {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #007bff; /* Couleur du texte */
+  font-weight: bold;
+  font-size: 24px;
+}
+
+.btn-custom {
+  background-color: #007bff; /* Couleur personnalisée pour le bouton */
+  border: none;
+  transition: transform 0.2s; /* Animation de zoom */
+}
+
+.btn-custom:hover {
+  transform: scale(1.05); /* Zoom au survol */
+  background-color: #0056b3; /* Couleur plus foncée au survol */
 }

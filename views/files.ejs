@@ -5,26 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Espace de dépôt - EduShare</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../public/css/style.css"> <!-- Assurez-vous que le chemin est correct -->
     <style>
         body {
-            background-color: #e0f7fa; /* Fond bleu clair */
+            background-color: #e8f5e9; /* Fond bleu très clair */
         }
-        h1 {
-            color: #007bff; /* Couleur du titre */
-            text-align: center;
-            margin-top: 20px;
+        .navbar-brand {
+            font-weight: bold;
+            color: #007bff; /* Couleur du nom du projet */
         }
-        .btn {
+        .btn-custom {
+            background-color: #007bff; /* Couleur personnalisée pour le bouton */
+            border: none;
             transition: transform 0.2s; /* Animation de zoom */
         }
-        .btn:hover {
+        .btn-custom:hover {
             transform: scale(1.05); /* Zoom au survol */
+            background-color: #0056b3; /* Couleur plus foncée au survol */
+        }
+        .project-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #007bff; /* Couleur du texte */
+            font-weight: bold;
+            font-size: 24px;
         }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="/">EduShare</a> <!-- Titre du projet -->
+        <a class="navbar-brand" href="/">EduShare</a> <!-- Nom du projet -->
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -32,9 +42,6 @@
             <ul class="navbar-nav">
                 <li class="nav-item">
                     <a class="nav-link" href="/">Accueil</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/files/resources">Ressources</a>
                 </li>
             </ul>
             <div class="ml-auto dropdown">
@@ -49,7 +56,7 @@
     </nav>
 
     <div class="container mt-4">
-        <h1>Fichiers déposés</h1>
+        <h1 class="project-title">Espace de Dépôt</h1> <!-- Titre de la page -->
         <p>Voici les fichiers que vous avez déposés ou qui ont été déposés par les membres de votre groupe.</p>
 
         <ul class="list-group mb-4">
@@ -73,7 +80,7 @@
                 <label for="file">Choisir un fichier</label>
                 <input type="file" class="form-control-file" id="file" name="file" required>
             </div>
-            <button type="submit" class="btn btn-primary">Télécharger</button>
+            <button type="submit" class="btn btn-custom">Télécharger</button> <!-- Bouton personnalisé -->
         </form>
     </div>
 
