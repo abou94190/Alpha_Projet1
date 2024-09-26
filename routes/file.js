@@ -165,20 +165,24 @@ router.post('/delete/:id', async (req, res) => {
     }
     res.redirect('/files');
 });
+
 // Route pour rediriger vers Nextcloud après authentification
 router.get('/nextcloud', (req, res) => {
     const user = req.user;
 
     if (!user) {
+        console.log('Accès refusé : utilisateur non authentifié');
         return res.status(403).send('Accès refusé');
     }
 
     // Générer l'URL pour rediriger vers Nextcloud
     const nextcloudUrl = `http://192.168.1.167/login?user=${user.sAMAccountName}`;
+    console.log(`Redirection vers Nextcloud : ${nextcloudUrl}`);
 
     // Rediriger l'utilisateur vers Nextcloud
     res.redirect(nextcloudUrl);
 });
+
 // Route pour afficher la page de Nextcloud
 router.get('/access-nextcloud', (req, res) => {
     if (!req.isAuthenticated()) {
@@ -208,8 +212,6 @@ router.post('/resources/download-notes', async (req, res) => {
         for (const file of files) {
             if (file.notes) {
                 for (const [groupName, note] of file.notes) {
-                    // Récupérer les OUs des membres via LDAP
-
                     worksheet.addRow({
                         filename: file.filename,
                         group: groupName,
@@ -227,12 +229,10 @@ router.post('/resources/download-notes', async (req, res) => {
         await workbook.xlsx.write(res);
         res.end();
     } catch (error) {
-        console.error('Erreur lors de la génération du fichier Excel:', error);
-        res.status(500).send('Erreur lors du téléchargement des notes');
+        console.error('Erreur lors de la génération du fichier Excel :', error);
+        req.flash('error', 'Erreur lors de la génération du fichier Excel.');
+        res.redirect('/files/resources');
     }
 });
 
-
-
-// Exporter le routeur
 module.exports = router;
