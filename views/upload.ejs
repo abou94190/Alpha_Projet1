@@ -5,27 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uploader un projet - EduShare</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        body {
-            background-color: #e8f5e9; /* Fond bleu très clair */
-        }
-        .project-title {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #007bff; /* Couleur du texte */
-            font-weight: bold;
-            font-size: 24px;
-        }
-        .btn-custom {
-            background-color: #007bff; /* Couleur personnalisée pour le bouton */
-            border: none;
-            transition: transform 0.2s; /* Animation de zoom */
-        }
-        .btn-custom:hover {
-            transform: scale(1.05); /* Zoom au survol */
-            background-color: #0056b3; /* Couleur plus foncée au survol */
-        }
-    </style>
+    <link rel="stylesheet" href="../public/css/style.css"> <!-- Assurez-vous que le chemin est correct -->
 </head>
 <body>
     <div class="container mt-4">
@@ -34,7 +14,8 @@
 
         <form action="/files/upload" method="POST" enctype="multipart/form-data">
             <div class="form-group">
-                <input type="file" name="projectFile" class="form-control-file" required />
+                <label for="projectFile">Choisir un fichier</label>
+                <input type="file" name="projectFile" class="form-control-file" id="projectFile" required />
             </div>
             <button type="submit" class="btn btn-custom">Télécharger</button> <!-- Bouton personnalisé -->
         </form>

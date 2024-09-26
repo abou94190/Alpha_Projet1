@@ -5,34 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ressources - EduShare</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        body {
-            background-color: #e8f5e9; /* Fond bleu très clair */
-        }
-        .navbar-brand {
-            color: #007bff; /* Couleur du texte de la marque */
-        }
-        .btn-custom {
-            background-color: #007bff; /* Couleur personnalisée pour le bouton */
-            border: none;
-            transition: transform 0.2s; /* Animation de zoom */
-        }
-        .btn-custom:hover {
-            transform: scale(1.05); /* Zoom au survol */
-            background-color: #0056b3; /* Couleur plus foncée au survol */
-        }
-        .project-title {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #007bff; /* Couleur du texte */
-            font-weight: bold;
-            font-size: 24px;
-        }
-    </style>
+    <link rel="stylesheet" href="../public/css/style.css"> <!-- Assurez-vous que le chemin est correct -->
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="/files/resources">Ressources</a> <!-- Affichage de "Ressources" à gauche -->
+        <a class="navbar-brand" href="/files/resources">Ressources</a>
         <div class="ml-auto dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="userMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Bonjour, <%= user.cn %>
@@ -47,21 +24,7 @@
         <h1 class="project-title">EduShare</h1> <!-- Titre du projet -->
         <p>Voici les ressources disponibles :</p>
 
-        <!-- Formulaire pour sélectionner l'OU -->
-        <form id="ouSelectForm" method="GET" action="/files/resources">
-            <div class="form-group">
-                <label for="ouSelect">Sélectionnez une Classe :</label>
-                <select class="form-control" id="ouSelect" name="ou" onchange="document.getElementById('ouSelectForm').submit();">
-                    <option value="">-- Choisissez une classe --</option>
-                    <% const ous = [...new Set(resources.map(resource => resource.uploadedByOU))]; // Créez une liste unique d'OUs %>
-                    <% ous.forEach(ou => { %>
-                        <option value="<%= ou %>" <%= ou === selectedOU ? 'selected' : '' %>><%= ou %></option>
-                    <% }); %>
-                </select>
-            </div>
-        </form>
-
-        <table class="table table-bordered mt-4">
+        <table class="table table-bordered">
             <thead>
                 <tr>
                     <th>Nom de la ressource</th>

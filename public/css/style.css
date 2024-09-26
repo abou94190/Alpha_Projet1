@@ -1,94 +1,34 @@
+/* style.css */
 body {
-  background-color: #e8f5e9; /* Fond bleu très clair */
+  background-color: #e0f7fa; /* Fond bleu clair */
 }
 
 .project-title {
   text-align: center;
   margin-bottom: 20px;
-  color: #007bff; /* Couleur du texte */
+  color: #00796b; /* Couleur du texte */
   font-weight: bold;
-  font-size: 24px;
+  font-size: 28px; /* Taille du titre */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* Ombre portée pour le texte */
 }
 
 .btn-custom {
-  background-color: #007bff; /* Couleur personnalisée pour le bouton */
+  background-color: #00796b; /* Couleur personnalisée pour le bouton */
   border: none;
-  transition: transform 0.2s; /* Animation de zoom */
+  transition: background-color 0.3s, transform 0.2s; /* Animation de transition */
 }
 
 .btn-custom:hover {
+  background-color: #004d40; /* Couleur plus foncée au survol */
   transform: scale(1.05); /* Zoom au survol */
-  background-color: #b4c9df; /* Couleur plus foncée au survol */
 }
 
-/* Autres styles globaux peuvent être ajoutés ici */
-body {
-  background-color: #e8f5e9; /* Fond bleu très clair */
+.alert {
+  margin-bottom: 20px; /* Espace supplémentaire pour les alertes */
 }
 
-.navbar-brand {
-  color: #007bff; /* Couleur du texte de la marque */
+.logo {
+  max-width: 100%; /* Permet à l'image de s'ajuster à la largeur du conteneur */
+  height: auto; /* Conserve le ratio de l'image */
 }
 
-.project-title {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #007bff; /* Couleur du texte */
-  font-weight: bold;
-  font-size: 24px;
-}
-
-.btn-custom {
-  background-color: #007bff; /* Couleur personnalisée pour le bouton */
-  border: none;
-  transition: transform 0.2s, background-color 0.3s; /* Animation de zoom et de couleur */
-}
-
-.btn-custom:hover {
-  transform: scale(1.05); /* Zoom au survol */
-  background-color: #0056b3; /* Couleur plus foncée au survol */
-}
-body {
-  background-color: #e8f5e9; /* Fond bleu très clair */
-}
-
-.project-title {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #007bff; /* Couleur du texte */
-  font-weight: bold;
-  font-size: 24px;
-}
-
-.btn-custom {
-  background-color: #007bff; /* Couleur personnalisée pour le bouton */
-  border: none;
-  transition: transform 0.2s; /* Animation de zoom */
-}
-
-.btn-custom:hover {
-  transform: scale(1.05); /* Zoom au survol */
-  background-color: #0056b3; /* Couleur plus foncée au survol */
-}
-body {
-  background-color: #e8f5e9; /* Fond bleu très clair */
-}
-
-.project-title {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #007bff; /* Couleur du texte */
-  font-weight: bold;
-  font-size: 24px;
-}
-
-.btn-custom {
-  background-color: #007bff; /* Couleur personnalisée pour le bouton */
-  border: none;
-  transition: transform 0.2s; /* Animation de zoom */
-}
-
-.btn-custom:hover {
-  transform: scale(1.05); /* Zoom au survol */
-  background-color: #0056b3; /* Couleur plus foncée au survol */
-}
