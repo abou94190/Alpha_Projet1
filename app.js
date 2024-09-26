@@ -49,6 +49,8 @@ app.set('views', path.join(__dirname, 'views'));
 // Serve static files from the public directory
 app.use('/public', express.static(path.join(__dirname, 'public'))); // Added line for serving static files
 
+app.use('/views', express.static(path.join(__dirname, 'views')));
+
 // LDAP Configuration
 const OPTS = {
     server: {
