@@ -165,6 +165,28 @@ router.post('/delete/:id', async (req, res) => {
     }
     res.redirect('/files');
 });
+// Route pour rediriger vers Nextcloud après authentification
+router.get('/nextcloud', (req, res) => {
+    const user = req.user;
+
+    if (!user) {
+        return res.status(403).send('Accès refusé');
+    }
+
+    // Générer l'URL pour rediriger vers Nextcloud
+    const nextcloudUrl = `http://192.168.1.167/login?user=${user.sAMAccountName}`;
+
+    // Rediriger l'utilisateur vers Nextcloud
+    res.redirect(nextcloudUrl);
+});
+// Route pour afficher la page de Nextcloud
+router.get('/access-nextcloud', (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.redirect('/login'); // Redirigez les utilisateurs non authentifiés vers la page de login
+    }
+
+    res.render('nextcloud', { user: req.user });
+});
 
 // Route pour télécharger les notes des groupes
 router.post('/resources/download-notes', async (req, res) => {
