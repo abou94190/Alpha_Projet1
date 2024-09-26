@@ -1,13 +1,12 @@
+// models/Resource.js
 const mongoose = require('mongoose');
 
-const fileSchema = new mongoose.Schema({
+const resourceSchema = new mongoose.Schema({
     filename: { type: String, required: true },
-    buffer: { type: Buffer, required: true },
-    uploadedBy: { type: String, required: true }, // Nom d'utilisateur
-    uploadedByGroup: { type: [String], required: true }, // Groupes de l'utilisateur
-    uploadedByOU: { type: String, required: true }
-}, { timestamps: true });
+    uploadedByOU: { type: String },
+    uploadedByGroup: { type: [String] },
+    notes: { type: Map, of: Number, default: {} }, // Initialiser avec un objet vide
+});
 
-const File = mongoose.model('File', fileSchema);
 
-module.exports = File;
+module.exports = mongoose.model('Resource', resourceSchema);

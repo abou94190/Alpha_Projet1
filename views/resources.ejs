@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ressources - EduShare</title>
+    <title>Ressources - Professeur</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="../public/css/style.css"> <!-- Assurez-vous que le chemin est correct -->
 </head>
@@ -24,11 +25,31 @@
         <h1 class="project-title">EduShare</h1> <!-- Titre du projet -->
         <p>Voici les ressources disponibles :</p>
 
-        <table class="table table-bordered">
+        <!-- Formulaire pour sélectionner l'OU -->
+        <form id="ouSelectForm" method="GET" action="/files/resources">
+            <div class="form-group">
+                <label for="ouSelect">Sélectionnez une Classe :</label>
+                <select class="form-control" id="ouSelect" name="ou" onchange="document.getElementById('ouSelectForm').submit();">
+                    <option value="">-- Choisissez une classe --</option>
+                    <% const ous = [...new Set(resources.map(resource => resource.uploadedByOU))]; // Créez une liste unique d'OUs %>
+                    <% ous.forEach(ou => { %>
+                        <option value="<%= ou %>" <%= ou === selectedOU ? 'selected' : '' %>><%= ou %></option>
+                    <% }); %>
+                </select>
+            </div>
+        </form>
+
+        <!-- Bouton Télécharger les notes -->
+        <form action="/files/resources/download-notes" method="POST">
+            <button type="submit" class="btn btn-primary mb-4">Télécharger les notes</button>
+        </form>
+
+        <table class="table table-bordered mt-4">
             <thead>
                 <tr>
                     <th>Nom de la ressource</th>
                     <th>Groupe de l'utilisateur</th>
+                    <th>Notes</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -39,8 +60,8 @@
                         <td>
                             <% 
                                 if (Array.isArray(resource.uploadedByGroup) && resource.uploadedByGroup.length > 0) {
-                                    const groupString = resource.uploadedByGroup[0]; // Prendre le premier élément
-                                    const groupName = groupString.replace('CN=', '').split(',')[0]; // Enlever 'CN=' et prendre la première partie
+                                    const groupString = resource.uploadedByGroup[0]; 
+                                    const groupName = groupString.replace('CN=', '').split(',')[0];
                                     %><%= groupName %><%
                                 } else {
                                     %>Inconnu<%
@@ -48,7 +69,32 @@
                             %>
                         </td>
                         <td>
-                            <a href="/files/download/<%= resource._id %>" class="btn btn-custom btn-sm">Télécharger</a> <!-- Bouton personnalisé -->
+                            <% if (resource.notes) { %>
+                                <% for (const [groupName, note] of resource.notes) { %>
+                                    <strong><%= groupName %> :</strong> <%= note %>
+                                    <!-- Formulaire pour supprimer la note -->
+                                    <form action="/files/resources/delete-note" method="POST" style="display:inline;">
+                                        <input type="hidden" name="resourceId" value="<%= resource._id %>">
+                                        <input type="hidden" name="groupName" value="<%= groupName %>">
+                                        <button type="submit" class="btn btn-danger btn-sm ml-1" onclick="return confirm('Voulez-vous vraiment supprimer cette note ?');">Supprimer</button>
+                                    </form>
+                                    <br>
+                                <% } %>
+                            <% } else { %>
+                                Aucune note disponible
+                            <% } %>
+                        </td>
+                        <td>
+                            <a href="/files/download/<%= resource._id %>" class="btn btn-info btn-sm">Télécharger</a>
+                            <!-- Formulaire pour donner une note -->
+                            <form class="mt-2" action="/files/resources/group-notes" method="POST">
+                                <input type="hidden" name="resourceId" value="<%= resource._id %>">
+                                <div class="form-group">
+                                    <input type="text" class="form-control" name="groupName" placeholder="Appréciation" required>
+                                    <input type="number" class="form-control mt-1" name="note" placeholder="Note" min="0" max="20" required>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-sm">Donner une note au groupe</button>
+                            </form>
                         </td>
                     </tr>
                 <% }); %>
