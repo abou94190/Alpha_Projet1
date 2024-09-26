@@ -46,6 +46,9 @@ app.use((req, res, next) => {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Serve static files from the public directory
+app.use('/public', express.static(path.join(__dirname, 'public'))); // Added line for serving static files
+
 // LDAP Configuration
 const OPTS = {
     server: {
@@ -138,7 +141,8 @@ app.post('/login', passport.authenticate('ldapauth', {
 });
 
 // Static server for CSS and JS files
-app.use(express.static(path.join(__dirname, 'public')));
+// This line is now redundant due to the earlier static serving line.
+// app.use(express.static(path.join(__dirname, 'public')));
 
 // Start the server
 const PORT = process.env.PORT || 3000;

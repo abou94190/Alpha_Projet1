@@ -1,57 +1,62 @@
-/* style2.css */
+/* Basic Reset */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-/* Global styles */
+/* Body Styles */
 body {
-    background-color: #e0f7fa; /* Fond bleu clair */
-    font-family: 'Arial', sans-serif; /* Police de base */
-    color: #333; /* Couleur du texte */
-    margin: 0; /* Suppression des marges par défaut */
-    padding: 0; /* Suppression du padding par défaut */
+    font-family: Arial, sans-serif;
+    background-color: #cfddeb; /* Light gray background */
 }
 
-/* Container styles */
+/* Container Styles */
 .container {
-    padding: 40px; /* Ajout d'un padding autour du contenu */
+    max-width: 1200px; /* Max width for larger screens */
 }
 
-/* Title styles */
-.display-4 {
-    color: #00796b; /* Couleur du titre principal */
-    margin-bottom: 20px; /* Marges inférieures */
+/* Title Styles */
+h1.display-4 {
+    color: #007bff; /* Bootstrap primary color */
+    margin-bottom: 20px;
 }
 
-/* Role selection styles */
+/* Role Selection Cards */
 .role-selection {
-    margin-top: 30px; /* Marges supérieures */
+    margin-top: 30px;
 }
 
-/* Styles pour les cartes */
+/* Card Styles */
 .card {
-    border-radius: 10px; /* Coins arrondis des cartes */
-    transition: transform 0.3s, box-shadow 0.3s; /* Animation de transition */
+    border-radius: 10px; /* Rounded corners */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Soft shadow */
+    transition: transform 0.3s; /* Animation on hover */
 }
 
-/* Effet de survol sur les cartes */
 .card:hover {
-    transform: translateY(-5px); /* Légère élévation de la carte au survol */
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* Ombre plus prononcée au survol */
+    transform: translateY(-5px); /* Lift effect on hover */
 }
 
-/* Styles pour les icônes */
+/* Icon Styles */
 .role-icon {
-    font-size: 50px; /* Taille des icônes */
-    margin-bottom: 20px; /* Espace en bas des icônes */
+    font-size: 48px; /* Size of the role icon */
+    margin-bottom: 15px;
 }
 
-/* Boutons stylisés */
+/* Button Styles */
 .btn {
-    width: 100%; /* Boutons prennent toute la largeur de la carte */
-    border-radius: 5px; /* Coins arrondis des boutons */
+    width: 100%; /* Full-width buttons */
+    padding: 10px;
+    font-size: 16px;
 }
 
-/* Pour les écrans plus petits */
+/* Responsive Adjustments */
 @media (max-width: 768px) {
     .role-selection {
-        flex-direction: column; /* Alignement vertical sur les petits écrans */
+        flex-direction: column; /* Stack cards on small screens */
+    }
+    .col-md-4 {
+        margin-bottom: 20px; /* Spacing between stacked cards */
     }
 }
