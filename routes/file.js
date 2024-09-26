@@ -186,15 +186,6 @@ router.get('/nextcloud', (req, res) => {
     res.redirect(nextcloudUrl);
 });
 
-// Route pour afficher la page de Nextcloud
-router.get('/access-nextcloud', (req, res) => {
-    if (!req.isAuthenticated()) {
-        return res.redirect('/login'); // Redirigez les utilisateurs non authentifiés vers la page de login
-    }
-
-    res.render('nextcloud', { user: req.user });
-});
-
 // Route pour télécharger les notes des groupes
 router.post('/resources/download-notes', async (req, res) => {
     try {
