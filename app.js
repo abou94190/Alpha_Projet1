@@ -8,7 +8,7 @@ const bodyParser = require('body-parser');
 const flash = require('connect-flash');
 
 const app = express();
-const File = require('./models/File'); // Assurez-vous que le chemin est correct
+const File = require('./models/File'); // Ensure the correct path
 const dbURI = 'mongodb://127.0.0.1:27017/mon_atelier';
 
 // Connect to MongoDB
@@ -46,42 +46,38 @@ app.use((req, res, next) => {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Serve static files from the public directory
-app.use('/public', express.static(path.join(__dirname, 'public'))); // Added line for serving static files
-
-app.use('/views', express.static(path.join(__dirname, 'views')));
-
 // LDAP Configuration
 const OPTS = {
     server: {
         url: 'ldap://192.168.1.21:389',
-        bindDN: 'CN=Administrateur,CN=Users,DC=workshop,DC=local', // Remplacez par le bon DN
-        bindCredentials: 'Epsi2022!', // Mot de passe
+        bindDN: 'CN=Administrateur,CN=Users,DC=workshop,DC=local', // Replace with the correct DN
+        bindCredentials: 'Epsi2022!', // Password
         searchBase: 'DC=workshop,DC=local',
-        searchFilter: '(sAMAccountName={{username}})' // Utilisez sAMAccountName
+        searchFilter: '(sAMAccountName={{username}})' // Use sAMAccountName
     }
 };
 
 passport.use(new LdapStrategy(OPTS, (user, done) => {
-    console.log('Utilisateur LDAP:', user);
+  console.log('Utilisateur LDAP:', user);
 
-    if (user) {
-        const memberOfArray = Array.isArray(user.memberOf) ? user.memberOf : (user.memberOf ? [user.memberOf] : []);
-        const isAdmin = memberOfArray.includes('CN=Admin,DC=workshop,DC=local');
-        const isProf = memberOfArray.includes('CN=Prof,DC=workshop,DC=local');
+  if (user) {
+      // Assurez-vous que memberOf est un tableau
+      const memberOfArray = Array.isArray(user.memberOf) ? user.memberOf : (user.memberOf ? [user.memberOf] : []);
+      const isAdmin = memberOfArray.includes('CN=Admin,DC=workshop,DC=local');
+      const isProf = memberOfArray.includes('CN=Prof,DC=workshop,DC=local'); // Assurez-vous que c'est le bon DN pour les professeurs
 
-        console.log(`Utilisateur ${user.sAMAccountName} est admin: ${isAdmin}`);
-        console.log(`Utilisateur ${user.sAMAccountName} est prof: ${isProf}`);
-
-        return done(null, { 
-            ...user, 
-            isAdmin, 
-            isProf,
-            memberOf: memberOfArray 
-        });
-    } else {
-        return done(null, false, { message: 'Nom d’utilisateur ou mot de passe incorrect' });
-    }
+      console.log(`Utilisateur ${user.sAMAccountName} est admin: ${isAdmin}`);
+      console.log(`Utilisateur ${user.sAMAccountName} est prof: ${isProf}`);
+      
+      return done(null, { 
+          ...user, 
+          isAdmin, 
+          isProf,
+          memberOf: memberOfArray 
+      });
+  } else {
+      return done(null, false, { message: 'Nom d’utilisateur ou mot de passe incorrect' });
+  }
 }));
 
 passport.serializeUser((user, done) => done(null, user));
@@ -89,9 +85,9 @@ passport.deserializeUser((user, done) => done(null, user));
 
 app.get('/', (req, res) => {
     if (req.isAuthenticated()) {
-        return res.redirect('/files'); // Redirige vers la page des fichiers si l'utilisateur est connecté
+        return res.redirect('/files'); // Redirect to files page if user is logged in
     }
-    res.redirect('/choix'); // Redirige vers la page de choix si non connecté
+    res.redirect('/login'); // Otherwise, redirect to login page
 });
 
 // Routes
@@ -116,7 +112,7 @@ app.get('/files/download/:id', async (req, res) => {
             'Content-Disposition': `attachment; filename="${file.filename}"`,
         });
 
-        res.send(file.buffer); // Supposons que les données binaires sont stockées dans le champ 'buffer'
+        res.send(file.buffer); // Assuming the binary data is stored in the 'buffer' field
     } catch (err) {
         console.error(err);
         res.status(500).send('Server error');
@@ -125,26 +121,25 @@ app.get('/files/download/:id', async (req, res) => {
 
 // Login route
 app.post('/login', passport.authenticate('ldapauth', {
-    failureRedirect: '/login',
-    failureFlash: true
+  failureRedirect: '/login',
+  failureFlash: true
 }), (req, res) => {
-    console.log(`Utilisateur connecté: ${req.user.sAMAccountName}`);
-    
-    if (req.user.isAdmin) {
-        console.log(`Redirection admin pour l'utilisateur ${req.user.sAMAccountName}`);
-        return res.redirect('/files/admin'); // Redirige vers la page admin
-    } else if (req.user.isProf) {
-        console.log(`Redirection prof pour l'utilisateur ${req.user.sAMAccountName}`);
-        return res.redirect('/files/resources'); // Redirige vers la page des ressources pour les profs
-    }
-    
-    console.log(`Redirection utilisateur pour l'utilisateur ${req.user.sAMAccountName}`);
-    res.redirect('/files'); // Redirige vers la page des fichiers pour les autres utilisateurs
+  console.log(`Utilisateur connecté: ${req.user.sAMAccountName}`);
+  
+  if (req.user.isAdmin) {
+      console.log(`Redirection admin pour l'utilisateur ${req.user.sAMAccountName}`);
+      return res.redirect('/files/admin'); // Redirige vers la page admin
+  } else if (req.user.isProf) {
+      console.log(`Redirection prof pour l'utilisateur ${req.user.sAMAccountName}`);
+      return res.redirect('/files/resources'); // Redirige vers la page des ressources pour les profs
+  }
+  
+  console.log(`Redirection utilisateur pour l'utilisateur ${req.user.sAMAccountName}`);
+  res.redirect('/files'); // Redirige vers la page des fichiers pour les autres utilisateurs
 });
 
 // Static server for CSS and JS files
-// This line is now redundant due to the earlier static serving line.
-// app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Start the server
 const PORT = process.env.PORT || 3000;

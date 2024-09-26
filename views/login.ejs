@@ -14,11 +14,13 @@
 <body>
     <div class="container d-flex align-items-center justify-content-center" style="height: 100vh;">
         <div class="card" style="width: 25rem;">
-            <div class="card-body">
+            <div class="card-body text-center"> <!-- Ajout de la classe text-center ici -->
                 <!-- Ajout du logo -->
-                <img src="../views/images/edusharelogo.jpg" class="logo mb-3" alt="EduShare Logo" /> <!-- Classe pour l'image avec marge en bas -->
+                <div class="d-flex justify-content-center mb-3"> <!-- Conteneur pour centrer le logo -->
+                    <img src="../views/images/edusharelogo.jpg" class="logo" alt="EduShare Logo" /> <!-- Logo centré -->
+                </div>
                 <h1 class="project-title">EduShare</h1> <!-- Titre du projet -->
-                <h5 class="card-title text-center">Connexion</h5>
+                <h5 class="card-title">Connexion</h5>
                 <% if (messages.error) { %>
                     <div class="alert alert-danger"><%= messages.error %></div>
                 <% } %>
