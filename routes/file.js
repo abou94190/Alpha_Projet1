@@ -46,30 +46,33 @@ router.get('/', async (req, res) => {
     }
 });
 
-/// Route pour afficher les ressources
+//// Route pour afficher les ressources
 router.get('/resources', async (req, res) => {
     const user = req.user;
     try {
-        const selectedOU = req.query.ou || ''; // Récupérer l'OU sélectionnée
-        let resources;
-        if (user.isProf === false) {
+        // Vérifiez si l'utilisateur est un professeur
+        if (!user.isProf) {
             return res.status(403).send('Accès refusé');
         }
 
-        // Récupérer les ressources en fonction de l'OU sélectionnée
-        if (selectedOU) {
-            resources = await File.find({ uploadedByOU: selectedOU }); // Filtrer les ressources par OU
-        } else {
-            resources = await File.find(); // Si aucune OU n'est sélectionnée, afficher toutes les ressources
-        }
+        // Récupérer les groupes de l'utilisateur
+        const userGroups = Array.isArray(user.memberOf) ? user.memberOf : [];
 
-        res.render('resources', { user: req.user, resources, selectedOU }); // Passer l'OU sélectionnée à la vue
+        // Récupérer les fichiers uploadés par les membres de son groupe LDAP
+        const resources = await File.find({ uploadedByGroup: { $in: userGroups } });
+
+        // Récupérer l'OU sélectionnée à partir des requêtes, sinon définir une valeur par défaut
+        const selectedOU = req.query.ou || ''; // Assurez-vous qu'il est toujours défini comme une chaîne vide si non présent
+
+        res.render('resources', { user: req.user, resources, selectedOU }); // Passer les ressources et l'OU sélectionnée à la vue
     } catch (err) {
         console.error(err);
         req.flash('error', 'Erreur lors de la récupération des ressources.');
         res.redirect('/files'); // Rediriger en cas d'erreur
     }
 });
+
+
 
 // Route pour donner une note à un groupe
 router.post('/resources/group-notes', async (req, res) => {
@@ -176,7 +179,7 @@ router.get('/nextcloud', (req, res) => {
     }
 
     // Générer l'URL pour rediriger vers Nextcloud
-    const nextcloudUrl = `http://192.168.1.167/login?user=${user.sAMAccountName}`;
+    const nextcloudUrl = `http://192.168.1.183/login?user=${user.sAMAccountName}`;
     console.log(`Redirection vers Nextcloud : ${nextcloudUrl}`);
 
     // Rediriger l'utilisateur vers Nextcloud

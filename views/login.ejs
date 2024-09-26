@@ -5,57 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion - EduShare</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="../public/css/style.css"> <!-- Assurez-vous que le chemin est correct -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
-            background-color: #e0f7fa; /* Fond bleu clair */
+            background-image: url('https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fc.wallhere.com%2Fphotos%2F41%2Fd1%2Fclouds_sky_mountains_snowy_mountain_horizon_Mount_Logan_Yukon_Canada-1759983.jpg!d&f=1&nofb=1&ipt=6321354ab3cf8bacd32eb000abc385cc494b7b9fbcd758e626b7f6ac8f053bf0&ipo=images'); /* Remplacez par l'URL de votre image de nuages */
+            background-size: cover; /* Remplit tout l'arrière-plan */
+            background-position: center; /* Centre l'image */
+            height: 100vh; /* Prend la hauteur de la vue */
+            display: flex; /* Utilisation de flexbox pour centrer le contenu */
+            justify-content: center; /* Centre horizontalement */
+            align-items: center; /* Centre verticalement */
+            font-family: 'Arial', sans-serif; /* Police simple et moderne */
+        }
+        .card {
+            background-color: rgba(0, 0, 0, 0.8); /* Noir transparent */
+            border: none;
+            border-radius: 20px; /* Coins très arrondis */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); /* Ombre plus marquée */
+            color: white; /* Texte en blanc pour contraste */
+            padding: 20px; /* Espacement intérieur */
+            width: 100%; /* 100% de largeur */
+            max-width: 400px; /* Largeur maximale de 400px */
+            text-align: center; /* Centre le contenu textuel */
+        }
+        .logo {
+            font-size: 40px; /* Taille de l'icône */
+            margin-bottom: 10px; /* Espace sous l'icône */
         }
         .project-title {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #00796b; /* Couleur du texte */
-            font-weight: bold;
-            font-size: 28px; /* Taille du titre */
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* Ombre portée pour le texte */
+            font-size: 24px; /* Taille du titre */
+            margin-bottom: 20px; /* Espace sous le titre */
         }
         .btn-custom {
-            background-color: #00796b; /* Couleur personnalisée pour le bouton */
+            background-color: #007acc; /* Couleur personnalisée pour le bouton */
             border: none;
+            border-radius: 5px; /* Coins arrondis pour le bouton */
             transition: background-color 0.3s, transform 0.2s; /* Animation de transition */
         }
         .btn-custom:hover {
-            background-color: #004d40; /* Couleur plus foncée au survol */
+            background-color: #005ea6; /* Couleur plus foncée au survol */
             transform: scale(1.05); /* Zoom au survol */
+        }
+        .form-group label {
+            color: #ffffff; /* Couleur des étiquettes */
         }
         .alert {
             margin-bottom: 20px; /* Espace supplémentaire pour les alertes */
         }
+        .footer-link {
+            color: #007acc; /* Lien coloré */
+            text-decoration: none; /* Pas de soulignement */
+        }
+        .footer-link:hover {
+            text-decoration: underline; /* Soulignement au survol */
+        }
     </style>
 </head>
 <body>
-    <div class="container d-flex align-items-center justify-content-center" style="height: 100vh;">
-        <div class="card" style="width: 25rem;">
-            <div class="card-body">
-                <h1 class="project-title">EduShare</h1> <!-- Titre du projet -->
-                <h5 class="card-title text-center">Connexion</h5>
-                <% if (messages.error) { %>
-                    <div class="alert alert-danger"><%= messages.error %></div>
-                <% } %>
-                <form action="/login" method="POST">
-                    <div class="form-group">
-                        <label for="username">Nom d'utilisateur</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Mot de passe</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
-                    <button type="submit" class="btn btn-custom btn-block">Se connecter</button> <!-- Bouton personnalisé -->
-                </form>
-                <div class="text-center mt-3">
-                    <a href="#" style="color: #00796b;">Mot de passe oublié ?</a> <!-- Lien coloré -->
-                </div>
+    <div class="card">
+        <div class="logo">
+            <i class="fas fa-cloud-upload-alt"></i> <!-- Icône du logo -->
+        </div>
+        <h1 class="project-title">EduShare</h1> <!-- Titre du projet -->
+        <% if (messages.error) { %>
+            <div class="alert alert-danger"><%= messages.error %></div>
+        <% } %>
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label for="username">Nom d'utilisateur</label>
+                <input type="text" class="form-control" id="username" name="username" required>
             </div>
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-custom btn-block">Se connecter</button> <!-- Bouton personnalisé -->
+        </form>
+        <div class="text-center mt-3">
+            <a href="#" class="footer-link">Mot de passe oublié ?</a> <!-- Lien coloré -->
         </div>
     </div>
 
