@@ -4,11 +4,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ressources - Professeur</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background-image: url('https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fcdn.futura-sciences.com%2Fsources%2Fimages%2Ftrou%2520skypunch.jpg&f=1&nofb=1&ipt=00af7f2071d95369fb41ea74caba854b0eedd1bfa7c909e2fde0e0363d1eda0b&ipo=images');
+            background-repeat: no-repeat;
+            background-position: center;
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .navbar {
+            background-color: #007bff;
+        }
+        .navbar-brand, .navbar-dark .navbar-nav .nav-link {
+            color: white;
+        }
+        .navbar-dark .navbar-nav .nav-link:hover {
+            color: #ffc107;
+        }
+        .container {
+            background-color: rgba(0, 0, 0, 0.85);
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            color: white;
+            width: 98%; /* Augmenté pour élargir la boîte */
+            max-width: 1200px; /* Peut rester inchangé pour limiter la largeur max */
+            margin: 60px auto; /* Écart à gauche et à droite */
+            text-align: center;
+            overflow: auto;
+            height: auto;
+            min-height: 80vh;
+        }
+        h1 {
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        h1 .emoji {
+            font-size: 2rem; /* Taille de l'emoji dans le titre */
+            margin-right: 10px; /* Espace entre l'emoji et le texte */
+        }
+        .navbar-brand .emoji {
+            font-size: 2rem; /* Taille de l'emoji dans la navbar */
+        }
+        .btn {
+            border-radius: 20px;
+            padding: 10px 20px;
+            transition: background-color 0.3s ease;
+            color: white;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border: none;
+        }
+        .btn-success {
+            background-color: #28a745;
+            border: none;
+        }
+        .btn:hover {
+            opacity: 0.8;
+        }
+        /* Styles pour le tableau moderne */
+        .resource-card {
+            background-color: rgba(255, 255, 255, 0.1); /* Fond léger pour chaque carte */
+            border-radius: 8px; /* Coins arrondis */
+            margin-bottom: 20px; /* Espace entre les cartes */
+            padding: 15px; /* Espace interne */
+            text-align: left; /* Alignement du texte à gauche */
+            display: flex;
+            flex-direction: column; /* Alignement vertical des éléments */
+            justify-content: space-between; /* Espace entre les éléments */
+        }
+        .form-group {
+            text-align: left;
+            color: white;
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="/files/resources">Ressources</a>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <a class="navbar-brand" href="/files/resources">
+            <span class="emoji">📦</span> <!-- Emoji de boîte agrandi -->
+        </a>
         <div class="ml-auto dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="userMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Bonjour, <%= user.cn %>
@@ -20,7 +109,10 @@
     </nav>
 
     <div class="container mt-4">
-        <h1>Ressources</h1>
+        <h1>
+            <span class="emoji">📦</span> <!-- Emoji de boîte dans le titre -->
+            Ressources
+        </h1>
         <p>Voici les ressources disponibles :</p>
 
         <!-- Formulaire pour sélectionner l'OU -->
@@ -29,7 +121,7 @@
                 <label for="ouSelect">Sélectionnez une Classe :</label>
                 <select class="form-control" id="ouSelect" name="ou" onchange="document.getElementById('ouSelectForm').submit();">
                     <option value="">-- Choisissez une classe --</option>
-                    <% const ous = [...new Set(resources.map(resource => resource.uploadedByOU))]; // Créez une liste unique d'OUs %>
+                    <% const ous = [...new Set(resources.map(resource => resource.uploadedByOU))]; %>
                     <% ous.forEach(ou => { %>
                         <option value="<%= ou %>" <%= ou === selectedOU ? 'selected' : '' %>><%= ou %></option>
                     <% }); %>
@@ -42,66 +134,53 @@
             <button type="submit" class="btn btn-primary mb-4">Télécharger les notes</button>
         </form>
 
-        <table class="table table-bordered mt-4">
-            <thead>
-                <tr>
-                    <th>Nom de la ressource</th>
-                    <th>Groupe de l'utilisateur</th>
-                    <th>Notes</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% resources.forEach(resource => { %>
-                    <tr>
-                        <td><%= resource.filename %></td>
-                        <td>
-                            <% 
-                                if (Array.isArray(resource.uploadedByGroup) && resource.uploadedByGroup.length > 0) {
-                                    const groupString = resource.uploadedByGroup[0]; 
-                                    const groupName = groupString.replace('CN=', '').split(',')[0];
-                                    %><%= groupName %><%
-                                } else {
-                                    %>Inconnu<%
-                                } 
-                            %>
-                        </td>
-                        <td>
-                            <% if (resource.notes) { %>
-                                <% for (const [groupName, note] of resource.notes) { %>
-                                    <strong><%= groupName %> :</strong> <%= note %>
-                                    <!-- Formulaire pour supprimer la note -->
-                                    <form action="/files/resources/delete-note" method="POST" style="display:inline;">
-                                        <input type="hidden" name="resourceId" value="<%= resource._id %>">
-                                        <input type="hidden" name="groupName" value="<%= groupName %>">
-                                        <button type="submit" class="btn btn-danger btn-sm ml-1" onclick="return confirm('Voulez-vous vraiment supprimer cette note ?');">Supprimer</button>
-                                    </form>
-                                    <br>
-                                <% } %>
-                            <% } else { %>
-                                Aucune note disponible
-                            <% } %>
-                        </td>
-                        <td>
-                            <a href="/files/download/<%= resource._id %>" class="btn btn-info btn-sm">Télécharger</a>
-                            <!-- Formulaire pour donner une note -->
-                            <form class="mt-2" action="/files/resources/group-notes" method="POST">
+        <!-- Affichage des ressources -->
+        <% resources.forEach(resource => { %>
+            <div class="resource-card">
+                <div><strong>Nom de la ressource :</strong> <%= resource.filename %></div>
+                <div>
+                    <strong>Groupe de l'utilisateur :</strong>
+                    <% if (Array.isArray(resource.uploadedByGroup) && resource.uploadedByGroup.length > 0) {
+                        const groupString = resource.uploadedByGroup[0]; 
+                        const groupName = groupString.replace('CN=', '').split(',')[0]; %>
+                        <%= groupName %>
+                    <% } else { %>
+                        Inconnu
+                    <% } %>
+                </div>
+                <div>
+                    <strong>Notes :</strong>
+                    <% if (resource.notes) { %>
+                        <% for (const [groupName, note] of resource.notes) { %>
+                            <strong><%= groupName %> :</strong> <%= note %>
+                            <form action="/files/resources/delete-note" method="POST" style="display:inline;">
                                 <input type="hidden" name="resourceId" value="<%= resource._id %>">
-                                <div class="form-group">
-                                    <input type="text" class="form-control" name="groupName" placeholder="Appréciation" required>
-                                    <input type="number" class="form-control mt-1" name="note" placeholder="Note" min="0" max="20" required>
-                                </div>
-                                <button type="submit" class="btn btn-success btn-sm">Donner une note au groupe</button>
+                                <input type="hidden" name="groupName" value="<%= groupName %>">
+                                <button type="submit" class="btn btn-danger btn-sm ml-1" onclick="return confirm('Voulez-vous vraiment supprimer cette note ?');">Supprimer</button>
                             </form>
-                        </td>
-                    </tr>
-                <% }); %>
-            </tbody>
-        </table>
+                            <br>
+                        <% } %>
+                    <% } else { %>
+                        Aucune note disponible
+                    <% } %>
+                </div>
+                <div>
+                    <a href="/files/download/<%= resource._id %>" class="btn btn-info btn-sm">Télécharger</a>
+                    <form class="mt-2" action="/files/resources/group-notes" method="POST">
+                        <input type="hidden" name="resourceId" value="<%= resource._id %>">
+                        <div class="form-group">
+                            <input type="text" class="form-control" name="groupName" placeholder="Groupe" required>
+                            <input type="number" class="form-control mt-1" name="note" placeholder="Note" min="0" max="20" required>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm">Donner une note au groupe</button>
+                    </form>
+                </div>
+            </div>
+        <% }); %>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
