@@ -18,9 +18,14 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            padding-top: 60px; /* Espace pour la navbar */
         }
         .navbar {
             background-color: #007bff;
+            position: fixed; /* Fixer la navbar en haut */
+            top: 0; /* Positionner en haut */
+            width: 100%; /* S'assurer que la navbar prend toute la largeur */
+            z-index: 1000; /* S'assurer qu'elle soit au-dessus d'autres éléments */
         }
         .navbar-brand, .navbar-dark .navbar-nav .nav-link {
             color: white;
@@ -34,13 +39,14 @@
             padding: 40px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
             color: white;
-            width: 98%; /* Augmenté pour élargir la boîte */
-            max-width: 1200px; /* Peut rester inchangé pour limiter la largeur max */
-            margin: 60px auto; /* Écart à gauche et à droite */
+            width: 90%;
+            max-width: 1200px;
+            margin: 30px auto;
             text-align: center;
             overflow: auto;
             height: auto;
             min-height: 80vh;
+            margin-top: 80px; /* Ajouter un margin pour compenser la hauteur de la navbar */
         }
         h1 {
             color: #ffffff;
@@ -169,7 +175,7 @@
                     <form class="mt-2" action="/files/resources/group-notes" method="POST">
                         <input type="hidden" name="resourceId" value="<%= resource._id %>">
                         <div class="form-group">
-                            <input type="text" class="form-control" name="groupName" placeholder="Groupe" required>
+                            <input type="text" class="form-control" name="groupName" placeholder="Appréciation" required>
                             <input type="number" class="form-control mt-1" name="note" placeholder="Note" min="0" max="20" required>
                         </div>
                         <button type="submit" class="btn btn-success btn-sm">Donner une note au groupe</button>
