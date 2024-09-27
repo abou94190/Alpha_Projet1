@@ -198,7 +198,7 @@ router.post('/resources/download-notes', async (req, res) => {
         // Ajouter des en-têtes de colonne
         worksheet.columns = [
             { header: 'Nom de la ressource', key: 'filename', width: 30 },
-            { header: 'Groupe', key: 'group', width: 30 },
+            { header: 'Appréciation', key: 'group', width: 30 },
             { header: 'Note', key: 'note', width: 10 },
         ];
 
