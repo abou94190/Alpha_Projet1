@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const File = require('../models/File'); // Importer le modèle
-const exceljs = require('exceljs'); // Importer exceljs pour générer des fichiers Excel
+const File = require('../models/File');
+const Project = require('../models/Project');
+const exceljs = require('exceljs');
 const isAuthenticated = require('../middleware/authMiddleware');
 const { getLdapGroupOU } = require('../ldapservice/ldapService');
 
@@ -10,10 +11,10 @@ const { getLdapGroupOU } = require('../ldapservice/ldapService');
 router.use(isAuthenticated);
 
 // Configuration de Multer
-const storage = multer.memoryStorage(); // Stockage en mémoire
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-/// Route pour afficher la page des fichiers
+// Route pour afficher la page des fichiers
 router.get('/', async (req, res) => {
     const user = req.user; // Utilisateur authentifié
     if (user.isProf) {
@@ -38,60 +39,66 @@ router.get('/', async (req, res) => {
             });
         }
 
-        res.render('files', { user, files }); // Rendre la vue avec les fichiers
+        // Récupérer les projets pour l'étudiant
+        const userOU = user.dn.match(/OU=([^,]+)/)[1];
+        const projects = await Project.find({ assignedOU: userOU });
+
+        res.render('files', { user, files, projects }); // Rendre la vue avec les fichiers et les projets
     } catch (err) {
         console.error(err);
-        req.flash('error', 'Erreur lors de la récupération des fichiers.');
-        res.redirect('/files');
+        req.flash('error', 'Erreur lors de la récupération des fichiers et des projets.');
+        res.redirect('/');
     }
 });
-
-//// Route pour afficher les ressources
+// Route pour afficher les ressources
 router.get('/resources', async (req, res) => {
     const user = req.user;
     try {
-        // Vérifiez si l'utilisateur est un professeur
         if (!user.isProf) {
             return res.status(403).send('Accès refusé');
         }
 
-        // Récupérer les groupes de l'utilisateur
         const userGroups = Array.isArray(user.memberOf) ? user.memberOf : [];
 
-        // Récupérer les fichiers uploadés par les membres de son groupe LDAP
+        // Récupérer tous les fichiers uploadés par les membres de son groupe LDAP
         const resources = await File.find({ uploadedByGroup: { $in: userGroups } });
 
-        // Récupérer l'OU sélectionnée à partir des requêtes, sinon définir une valeur par défaut
-        const selectedOU = req.query.ou || ''; // Assurez-vous qu'il est toujours défini comme une chaîne vide si non présent
+        // Récupérer l'OU sélectionnée à partir des requêtes
+        const selectedOU = req.query.ou || '';
 
-        res.render('resources', { user: req.user, resources, selectedOU }); // Passer les ressources et l'OU sélectionnée à la vue
+        // Récupérer tous les projets créés par ce professeur
+        const projects = await Project.find({ createdBy: user.sAMAccountName });
+
+        res.render('resources', { 
+            user: req.user, 
+            resources, 
+            selectedOU, 
+            projects
+        });
     } catch (err) {
         console.error(err);
-        req.flash('error', 'Erreur lors de la récupération des ressources.');
-        res.redirect('/files'); // Rediriger en cas d'erreur
+        req.flash('error', 'Erreur lors de la récupération des ressources et des projets.');
+        res.redirect('/files');
     }
 });
 
-
-
 // Route pour donner une note à un groupe
 router.post('/resources/group-notes', async (req, res) => {
-    const { resourceId, groupName, note } = req.body; // Récupérer les données du formulaire
+    const { resourceId, groupName, note } = req.body;
 
     try {
-        const resource = await File.findById(resourceId); // Trouver la ressource par ID
+        const resource = await File.findById(resourceId);
 
         if (!resource) {
             req.flash('error', 'Ressource non trouvée.');
             return res.redirect('/files/resources');
         }
 
-        // Ajouter ou mettre à jour la note pour le groupe
         resource.notes.set(groupName, note);
-        await resource.save(); // Enregistrer les modifications
+        await resource.save();
 
         req.flash('success', 'Note enregistrée avec succès.');
-        res.redirect('/files/resources'); // Rediriger vers la page des ressources
+        res.redirect('/files/resources');
     } catch (error) {
         console.error('Erreur lors de l\'enregistrement de la note :', error);
         req.flash('error', 'Erreur lors de l\'enregistrement de la note.');
@@ -101,22 +108,21 @@ router.post('/resources/group-notes', async (req, res) => {
 
 // Route pour supprimer une note d'un groupe
 router.post('/resources/delete-note', async (req, res) => {
-    const { resourceId, groupName } = req.body; // Récupérer les données du formulaire
+    const { resourceId, groupName } = req.body;
 
     try {
-        const resource = await File.findById(resourceId); // Trouver la ressource par ID
+        const resource = await File.findById(resourceId);
 
         if (!resource) {
             req.flash('error', 'Ressource non trouvée.');
             return res.redirect('/files/resources');
         }
 
-        // Supprimer la note pour le groupe
         resource.notes.delete(groupName);
-        await resource.save(); // Enregistrer les modifications
+        await resource.save();
 
         req.flash('success', 'Note supprimée avec succès.');
-        res.redirect('/files/resources'); // Rediriger vers la page des ressources
+        res.redirect('/files/resources');
     } catch (error) {
         console.error('Erreur lors de la suppression de la note :', error);
         req.flash('error', 'Erreur lors de la suppression de la note.');
@@ -127,30 +133,27 @@ router.post('/resources/delete-note', async (req, res) => {
 // Route pour uploader un fichier
 router.post('/upload', upload.single('file'), async (req, res) => {
     try {
-        const user = req.user; // L'utilisateur doit être authentifié
+        const user = req.user;
 
         if (!user) {
             return res.status(403).send('Accès refusé');
         }
 
-        // Extraction de l'OU du DN de l'utilisateur
-        const ouMatch = user.dn.match(/OU=([^,]+)/); // Capture l'OU du DN
-        const uploadedByOU = ouMatch ? ouMatch[1] : 'Inconnu'; // Récupère le nom de l'OU
+        const ouMatch = user.dn.match(/OU=([^,]+)/);
+        const uploadedByOU = ouMatch ? ouMatch[1] : 'Inconnu';
 
-        // Création d'un nouvel objet File
         const newFile = new File({
-            filename: req.file.originalname, // Nom du fichier
-            buffer: req.file.buffer, // Contenu du fichier
-            uploadedBy: user.sAMAccountName, // Nom de l'utilisateur qui upload le fichier
-            uploadedByGroup: user.memberOf, // Liste des groupes de l'utilisateur
-            uploadedByOU: uploadedByOU // OU extraite
+            filename: req.file.originalname,
+            buffer: req.file.buffer,
+            uploadedBy: user.sAMAccountName,
+            uploadedByGroup: user.memberOf,
+            uploadedByOU: uploadedByOU
         });
 
-        // Sauvegarde du fichier
         await newFile.save();
 
         console.log('Fichier uploadé avec succès :', newFile);
-        res.redirect('/files'); // Redirigez vers la page des fichiers
+        res.redirect('/files');
     } catch (error) {
         console.error('Erreur lors de l\'upload du fichier :', error);
         res.status(500).send('Erreur lors de l\'upload du fichier');
@@ -160,7 +163,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 // Route pour supprimer un fichier
 router.post('/delete/:id', async (req, res) => {
     try {
-        await File.findByIdAndDelete(req.params.id); // Supprimer le fichier par ID
+        await File.findByIdAndDelete(req.params.id);
         req.flash('success', 'Fichier supprimé avec succès!');
     } catch (err) {
         console.error(err);
@@ -178,31 +181,42 @@ router.get('/nextcloud', (req, res) => {
         return res.status(403).send('Accès refusé');
     }
 
-    // Générer l'URL pour rediriger vers Nextcloud
     const nextcloudUrl = `http://192.168.1.183/login?user=${user.sAMAccountName}`;
     console.log(`Redirection vers Nextcloud : ${nextcloudUrl}`);
 
-    // Rediriger l'utilisateur vers Nextcloud
     res.redirect(nextcloudUrl);
+});
+router.post('/delete-project/:id', isAuthenticated, async (req, res) => {
+    if (!req.user.isProf) {
+        return res.status(403).send('Accès refusé');
+    }
+
+    try {
+        const projectId = req.params.id;
+        await Project.findByIdAndDelete(projectId);
+        req.flash('success', 'Projet supprimé avec succès');
+        res.redirect('/files/resources');
+    } catch (error) {
+        console.error('Erreur lors de la suppression du projet:', error);
+        req.flash('error', 'Erreur lors de la suppression du projet');
+        res.redirect('/files/resources');
+    }
 });
 
 // Route pour télécharger les notes des groupes
 router.post('/resources/download-notes', async (req, res) => {
     try {
-        const files = await File.find(); // Récupérer toutes les ressources
+        const files = await File.find();
 
-        // Créer un nouveau workbook
         const workbook = new exceljs.Workbook();
         const worksheet = workbook.addWorksheet('Notes des groupes');
 
-        // Ajouter des en-têtes de colonne
         worksheet.columns = [
             { header: 'Nom de la ressource', key: 'filename', width: 30 },
             { header: 'Appréciation', key: 'group', width: 30 },
             { header: 'Note', key: 'note', width: 10 },
         ];
 
-        // Parcourir chaque ressource pour extraire les notes
         for (const file of files) {
             if (file.notes) {
                 for (const [groupName, note] of file.notes) {
@@ -215,17 +229,81 @@ router.post('/resources/download-notes', async (req, res) => {
             }
         }
 
-        // Configurer la réponse pour télécharger le fichier
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', 'attachment; filename=notes.xlsx');
 
-        // Écrire le fichier Excel dans la réponse
         await workbook.xlsx.write(res);
         res.end();
     } catch (error) {
         console.error('Erreur lors de la génération du fichier Excel :', error);
         req.flash('error', 'Erreur lors de la génération du fichier Excel.');
         res.redirect('/files/resources');
+    }
+});
+
+// Route pour afficher la page de création de projet (pour les profs)
+router.get('/create-project', isAuthenticated, (req, res) => {
+    if (!req.user.isProf) {
+        return res.status(403).send('Accès refusé');
+    }
+    res.render('create-project');
+});
+
+// Route pour créer un nouveau projet
+router.post('/create-project', isAuthenticated, async (req, res) => {
+    if (!req.user.isProf) {
+        return res.status(403).send('Accès refusé');
+    }
+
+    try {
+        const { title, description, deadline, assignedOU } = req.body;
+        const newProject = new Project({
+            title,
+            description,
+            deadline,
+            createdBy: req.user.sAMAccountName,
+            assignedOU
+        });
+        await newProject.save();
+        req.flash('success', 'Projet créé avec succès');
+        res.redirect('/files/resources');
+    } catch (error) {
+        console.error('Erreur lors de la création du projet:', error);
+        req.flash('error', 'Erreur lors de la création du projet');
+        res.redirect('/files/resources');
+    }
+});
+
+// Route pour soumettre un fichier pour un projet
+router.post('/submit-project/:projectId', isAuthenticated, upload.single('file'), async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.projectId);
+        if (!project) {
+            return res.status(404).send('Projet non trouvé');
+        }
+
+        const newFile = new File({
+            filename: req.file.originalname,
+            buffer: req.file.buffer,
+            uploadedBy: req.user.sAMAccountName,
+            uploadedByGroup: req.user.memberOf,
+            uploadedByOU: req.user.dn.match(/OU=([^,]+)/)[1]
+        });
+        await newFile.save();
+
+        project.submissions.push({
+            studentName: req.user.sAMAccountName,
+            fileId: newFile._id,
+            submittedAt: new Date()
+        });
+        await project.save();
+
+        req.flash('success', 'Projet soumis avec succès');
+        res.redirect('/files');
+    } catch (error) {
+        console.error('Erreur lors de la soumission du projet:', error);
+        req.flash('error', 'Erreur lors de la soumission du projet');
+        res.redirect('/files');
     }
 });
 

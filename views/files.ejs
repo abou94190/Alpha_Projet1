@@ -14,8 +14,9 @@
             background-repeat: no-repeat;
             font-family: 'Arial', sans-serif;
             color: #333;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding-bottom: 60px;
         }
         .navbar {
             background-color: #007acc;
@@ -147,6 +148,33 @@
                 <form id="uploadForm" action="/files/upload" method="POST" enctype="multipart/form-data">
                     <input type="file" id="uploadFile" name="file" style="display: none;" onchange="document.getElementById('uploadForm').submit();">
                 </form>
+            </div>
+        </div>
+
+        <!-- Nouvelle section pour les projets -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <h2>Mes Projets</h2>
+                <ul class="list-group">
+                    <% projects.forEach(project => { %>
+                        <li class="list-group-item">
+                            <h5><%= project.title %></h5>
+                            <p><%= project.description %></p>
+                            <p>Date limite : <%= new Date(project.deadline).toLocaleDateString() %></p>
+                            <% if (new Date() <= new Date(project.deadline)) { %>
+                                <form action="/files/submit-project/<%= project._id %>" method="POST" enctype="multipart/form-data">
+                                    <div class="form-group">
+                                        <label for="file">Soumettre votre travail :</label>
+                                        <input type="file" class="form-control-file" id="file" name="file" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Soumettre</button>
+                                </form>
+                            <% } else { %>
+                                <p class="text-danger">La date limite est passée</p>
+                            <% } %>
+                        </li>
+                    <% }) %>
+                </ul>
             </div>
         </div>
     </div>

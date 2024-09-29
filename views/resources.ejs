@@ -11,21 +11,19 @@
             background-image: url('https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fcdn.futura-sciences.com%2Fsources%2Fimages%2Ftrou%2520skypunch.jpg&f=1&nofb=1&ipt=00af7f2071d95369fb41ea74caba854b0eedd1bfa7c909e2fde0e0363d1eda0b&ipo=images');
             background-repeat: no-repeat;
             background-position: center;
+            background-size: cover;
             font-family: 'Arial', sans-serif;
             color: #fff;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding-top: 60px; /* Espace pour la navbar */
+            padding-top: 60px;
         }
         .navbar {
             background-color: #007bff;
-            position: fixed; /* Fixer la navbar en haut */
-            top: 0; /* Positionner en haut */
-            width: 100%; /* S'assurer que la navbar prend toute la largeur */
-            z-index: 1000; /* S'assurer qu'elle soit au-dessus d'autres éléments */
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
         }
         .navbar-brand, .navbar-dark .navbar-nav .nav-link {
             color: white;
@@ -42,30 +40,24 @@
             width: 90%;
             max-width: 1200px;
             margin: 30px auto;
-            text-align: center;
             overflow: auto;
-            height: auto;
-            min-height: 80vh;
-            margin-top: 80px; /* Ajouter un margin pour compenser la hauteur de la navbar */
         }
-        h1 {
+        h1, h2 {
             color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
+            margin-bottom: 30px;
         }
-        h1 .emoji {
-            font-size: 2rem; /* Taille de l'emoji dans le titre */
-            margin-right: 10px; /* Espace entre l'emoji et le texte */
-        }
-        .navbar-brand .emoji {
-            font-size: 2rem; /* Taille de l'emoji dans la navbar */
+        h1 .emoji, h2 .emoji {
+            font-size: 2rem;
+            margin-right: 10px;
         }
         .btn {
             border-radius: 20px;
             padding: 10px 20px;
-            transition: background-color 0.3s ease;
-            color: white;
+            transition: all 0.3s ease;
+            margin: 5px;
         }
         .btn-primary {
             background-color: #007bff;
@@ -81,28 +73,48 @@
         }
         .btn:hover {
             opacity: 0.8;
+            transform: translateY(-2px);
         }
-        /* Styles pour le tableau moderne */
-        .resource-card {
-            background-color: rgba(255, 255, 255, 0.1); /* Fond léger pour chaque carte */
-            border-radius: 8px; /* Coins arrondis */
-            margin-bottom: 20px; /* Espace entre les cartes */
-            padding: 15px; /* Espace interne */
-            text-align: left; /* Alignement du texte à gauche */
-            display: flex;
-            flex-direction: column; /* Alignement vertical des éléments */
-            justify-content: space-between; /* Espace entre les éléments */
+        .resource-card, .project-card {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+        .resource-card:hover, .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
         .form-group {
-            text-align: left;
+            margin-bottom: 20px;
+        }
+        .form-control {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
+        }
+        .form-control:focus {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        .list-group-item {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .list-group-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
         }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <a class="navbar-brand" href="/files/resources">
-            <span class="emoji">📦</span> <!-- Emoji de boîte agrandi -->
+            <span class="emoji">📦</span>
         </a>
         <div class="ml-auto dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="userMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -116,17 +128,16 @@
 
     <div class="container mt-4">
         <h1>
-            <span class="emoji">📦</span> <!-- Emoji de boîte dans le titre -->
+            <span class="emoji">📦</span>
             Ressources
         </h1>
         <p>Voici les ressources disponibles :</p>
 
-        <!-- Formulaire pour sélectionner l'OU -->
         <form id="ouSelectForm" method="GET" action="/files/resources">
             <div class="form-group">
                 <label for="ouSelect">Sélectionnez une Classe :</label>
-                <select class="form-control" id="ouSelect" name="ou" onchange="document.getElementById('ouSelectForm').submit();">
-                    <option value="">-- Choisissez une classe --</option>
+                <select class="form-control" id="ouSelect" name="ou" onchange="this.form.submit();">
+                    <option value="">Toutes les classes</option>
                     <% const ous = [...new Set(resources.map(resource => resource.uploadedByOU))]; %>
                     <% ous.forEach(ou => { %>
                         <option value="<%= ou %>" <%= ou === selectedOU ? 'selected' : '' %>><%= ou %></option>
@@ -135,13 +146,47 @@
             </div>
         </form>
 
-        <!-- Bouton Télécharger les notes -->
-        <form action="/files/resources/download-notes" method="POST">
-            <button type="submit" class="btn btn-primary mb-4">Télécharger les notes</button>
+        <h2>
+            <span class="emoji">🎓</span>
+            Projets
+        </h2>
+        <a href="/files/create-project" class="btn btn-primary mb-3">Créer un nouveau projet</a>
+        <div class="row">
+            <% projects.forEach(project => { %>
+                <div class="col-md-6 mb-4">
+                    <div class="project-card">
+                        <h5><%= project.title %></h5>
+                        <p><%= project.description %></p>
+                        <p>Date limite : <%= new Date(project.deadline).toLocaleDateString() %></p>
+                        <p>Classe assignée : <%= project.assignedOU %></p>
+                        <h6>Soumissions :</h6>
+                        <ul class="list-group">
+                            <% project.submissions.forEach(submission => { %>
+                                <li class="list-group-item">
+                                    <%= submission.studentName %> - 
+                                    <%= new Date(submission.submittedAt).toLocaleString() %> - 
+                                    <a href="/files/download/<%= submission.fileId %>" class="btn btn-info btn-sm">Télécharger</a>
+                                </li>
+                            <% }) %>
+                        </ul>
+                        <form action="/files/delete-project/<%= project._id %>" method="POST" class="mt-3">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce projet ?');">Supprimer le projet</button>
+                        </form>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+
+        <form action="/files/resources/download-notes" method="POST" class="mb-4">
+            <button type="submit" class="btn btn-primary">Télécharger les notes</button>
         </form>
 
-        <!-- Affichage des ressources -->
-        <% resources.forEach(resource => { %>
+        <h2>
+            <span class="emoji">📄</span>
+            Ressources déposées
+        </h2>
+        <% const filteredResources = selectedOU ? resources.filter(r => r.uploadedByOU === selectedOU) : resources; %>
+        <% filteredResources.forEach(resource => { %>
             <div class="resource-card">
                 <div><strong>Nom de la ressource :</strong> <%= resource.filename %></div>
                 <div>
@@ -156,7 +201,7 @@
                 </div>
                 <div>
                     <strong>Notes :</strong>
-                    <% if (resource.notes) { %>
+                    <% if (resource.notes && resource.notes.size > 0) { %>
                         <% for (const [groupName, note] of resource.notes) { %>
                             <strong><%= groupName %> :</strong> <%= note %>
                             <form action="/files/resources/delete-note" method="POST" style="display:inline;">
@@ -170,7 +215,7 @@
                         Aucune note disponible
                     <% } %>
                 </div>
-                <div>
+                <div class="mt-3">
                     <a href="/files/download/<%= resource._id %>" class="btn btn-info btn-sm">Télécharger</a>
                     <form class="mt-2" action="/files/resources/group-notes" method="POST">
                         <input type="hidden" name="resourceId" value="<%= resource._id %>">
