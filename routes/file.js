@@ -16,6 +16,60 @@ const ldapConfig = {
     password: 'Epsi2022!'
 };
 
+const addUsersToGroup = (client, groupDN, users, ouPath) => {
+    return new Promise((resolve, reject) => {
+        if (!users || users.length === 0) {
+            return resolve();
+        }
+
+        const userDNs = users.split(',').map(user => `CN=${user},${ouPath}`);
+        const changes = {
+            operation: 'add',
+            modification: {
+                member: userDNs
+            }
+        };
+
+        client.modify(groupDN, changes, (err) => {
+            if (err) {
+                console.error('Erreur lors de l\'ajout des utilisateurs au groupe:', err);
+                reject(err);
+            } else {
+                console.log('Utilisateurs ajoutés avec succès au groupe');
+                resolve();
+            }
+        });
+    });
+};
+function getUsers(client, baseDN) {
+    return new Promise((resolve, reject) => {
+        const opts = {
+            filter: '(&(objectClass=user)(!(objectClass=computer)))',
+            scope: 'sub',
+            attributes: ['sAMAccountName', 'displayName']
+        };
+
+        client.search(baseDN, opts, (err, res) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            const users = [];
+            res.on('searchEntry', (entry) => {
+                const user = {
+                    sAMAccountName: entry.object.sAMAccountName,
+                    displayName: entry.object.displayName || entry.object.sAMAccountName
+                };
+                users.push(user);
+            });
+
+            res.on('error', reject);
+            res.on('end', () => resolve(users));
+        });
+    });
+}
+
 // Fonction pour extraire le nom du groupe et l'OU à partir de l'entrée LDAP
 function extractGroupInfo(entry) {
     let name = 'Nom inconnu';
@@ -111,38 +165,69 @@ function getOUs(client, baseDN) {
         });
     });
 }
-// Fonction pour récupérer les groupes
 function getGroups(client, baseDN) {
     return new Promise((resolve, reject) => {
         const opts = {
-            filter: '(objectClass=group)',
+            filter: '(&(objectClass=group)(!(objectClass=computer)))',
             scope: 'sub',
             attributes: ['cn', 'distinguishedName']
         };
 
         client.search(baseDN, opts, (err, res) => {
             if (err) {
+                console.error('Erreur lors de la recherche LDAP:', err);
                 reject(err);
                 return;
             }
 
             const groups = [];
             res.on('searchEntry', (entry) => {
-                const { name, ou } = extractGroupInfo(entry);
-                groups.push({ name, ou });
+                console.log('Entrée LDAP brute:', JSON.stringify(entry, null, 2));
+
+                let dn, name, ou;
+
+                // Tentative d'extraction du DN
+                if (entry.dn && typeof entry.dn === 'string') {
+                    dn = entry.dn;
+                } else if (entry.dn && typeof entry.dn.toString === 'function') {
+                    dn = entry.dn.toString();
+                } else if (entry.objectName && typeof entry.objectName === 'string') {
+                    dn = entry.objectName;
+                } else {
+                    console.warn('DN non trouvé ou non valide dans l\'entrée:', entry);
+                    return; // Passer à l'entrée suivante
+                }
+
+                // Extraction du nom (CN)
+                if (entry.attributes) {
+                    const cnAttribute = entry.attributes.find(attr => attr.type === 'cn');
+                    name = cnAttribute && cnAttribute.vals && cnAttribute.vals.length > 0 ? cnAttribute.vals[0] : 'Nom inconnu';
+                } else if (entry.object && entry.object.cn) {
+                    name = entry.object.cn;
+                } else {
+                    name = 'Nom inconnu';
+                }
+
+                // Extraction de l'OU
+                const ouMatch = dn.match(/OU=([^,]+)/i);
+                ou = ouMatch ? ouMatch[1] : 'OU inconnue';
+
+                console.log(`Groupe traité - Nom: ${name}, OU: ${ou}, DN: ${dn}`);
+                groups.push({ name, ou, dn });
             });
 
             res.on('error', (err) => {
+                console.error('Erreur lors de la recherche:', err);
                 reject(err);
             });
 
-            res.on('end', () => {
+            res.on('end', (result) => {
+                console.log('Recherche terminée. Groupes trouvés:', groups.length);
                 resolve(groups);
             });
         });
     });
 }
-
 
 router.use(isAuthenticated);
 
@@ -418,7 +503,6 @@ router.post('/submit-project/:projectId', upload.single('file'), async (req, res
 });
 
 
-// Route pour afficher la page de gestion des groupes
 router.get('/manage-groups', isAuthenticated, async (req, res) => {
     if (!req.user.isProf) {
         return res.status(403).send('Accès refusé');
@@ -429,39 +513,33 @@ router.get('/manage-groups', isAuthenticated, async (req, res) => {
             url: ldapConfig.url
         });
 
-        client.bind(ldapConfig.username, ldapConfig.password, async (err) => {
-            if (err) {
-                console.error('Erreur de connexion LDAP:', err);
-                return res.status(500).send('Erreur de connexion au serveur LDAP');
-            }
-
-            try {
-                const [groups, ous] = await Promise.all([
-                    getGroups(client, ldapConfig.baseDN),
-                    getOUs(client, ldapConfig.baseDN)
-                ]);
-
-                client.unbind();
-                console.log('OUs récupérées:', ous);
-                console.log('Groupes récupérés:', groups);
-
-                // Filtrer les OUs pour exclure celles qui sont déjà des groupes
-                const groupNames = new Set(groups.map(g => g.name));
-                const filteredOUs = ous.filter(ou => !groupNames.has(ou.name));
-
-                res.render('manage-groups', { groups, ous: filteredOUs });
-            } catch (error) {
-                console.error('Erreur lors de la récupération des données:', error);
-                res.status(500).send('Erreur serveur');
-            }
+        await new Promise((resolve, reject) => {
+            client.bind(ldapConfig.username, ldapConfig.password, (err) => {
+                if (err) {
+                    console.error('Erreur de connexion LDAP:', err);
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
         });
+
+        const groups = await getGroups(client, ldapConfig.baseDN);
+        const ous = await getOUs(client, ldapConfig.baseDN);
+
+        client.unbind();
+
+        // Trier les groupes par OU
+        groups.sort((a, b) => a.ou.localeCompare(b.ou));
+
+        res.render('manage-groups', { groups, ous });
     } catch (error) {
         console.error('Erreur lors de la récupération des groupes:', error);
+        req.flash('error', 'Erreur lors de la récupération des groupes');
         res.status(500).send('Erreur serveur');
     }
 });
 
-// Route pour créer un nouveau groupe
 router.post('/create-group', isAuthenticated, async (req, res) => {
     if (!req.user.isProf) {
         return res.status(403).send('Accès refusé');
@@ -472,67 +550,71 @@ router.post('/create-group', isAuthenticated, async (req, res) => {
 
     const client = ldap.createClient({ url: ldapConfig.url });
 
-    client.bind(ldapConfig.username, ldapConfig.password, (err) => {
-        if (err) {
-            console.error('Erreur de connexion LDAP:', err);
-            req.flash('error', 'Erreur de connexion au serveur LDAP');
-            return res.redirect('/files/manage-groups');
-        }
-
-        // Vérifier si l'OU existe
-        client.search(ouPath, { scope: 'base' }, (searchErr, searchRes) => {
-            if (searchErr) {
-                console.error('Erreur lors de la vérification de l\'OU:', searchErr);
-                req.flash('error', `Erreur lors de la vérification de l'OU: ${searchErr.message}`);
-                return res.redirect('/files/manage-groups');
-            }
-
-            let ouExists = false;
-            searchRes.on('searchEntry', (entry) => {
-                ouExists = true;
-            });
-
-            searchRes.on('error', (err) => {
-                console.error('Erreur lors de la recherche de l\'OU:', err);
-            });
-
-            searchRes.on('end', (result) => {
-                if (!ouExists) {
-                    console.error('L\'OU spécifiée n\'existe pas:', ouPath);
-                    req.flash('error', `L'OU spécifiée n'existe pas: ${ouPath}`);
-                    return res.redirect('/files/manage-groups');
+    try {
+        await new Promise((resolve, reject) => {
+            client.bind(ldapConfig.username, ldapConfig.password, (err) => {
+                if (err) {
+                    console.error('Erreur de connexion LDAP:', err);
+                    reject(err);
+                } else {
+                    resolve();
                 }
-
-                // L'OU existe, procéder à la création du groupe
-                const entry = {
-                    cn: groupName,
-                    objectClass: ['top', 'group'],
-                    sAMAccountName: groupName,
-                    groupType: '-2147483646' // Groupe de sécurité global
-                };
-
-                if (users) {
-                    entry.member = users.split(',').map(user => `CN=${user},${ouPath}`);
-                }
-
-                console.log('Entrée du groupe à créer:', entry);
-
-                const dn = `CN=${groupName},${ouPath}`;
-                client.add(dn, entry, (addErr) => {
-                    if (addErr) {
-                        console.error('Erreur lors de la création du groupe:', addErr);
-                        req.flash('error', `Erreur lors de la création du groupe: ${addErr.message}`);
-                    } else {
-                        console.log('Groupe créé avec succès:', dn);
-                        req.flash('success', `Le groupe "${groupName}" a été créé avec succès dans ${ouPath}`);
-                    }
-                    res.redirect('/files/manage-groups');
-                });
             });
         });
-    });
-});
 
+        // Vérifier si l'OU existe
+        const searchResult = await new Promise((resolve, reject) => {
+            client.search(ouPath, { scope: 'base' }, (searchErr, searchRes) => {
+                if (searchErr) {
+                    reject(searchErr);
+                } else {
+                    let ouExists = false;
+                    searchRes.on('searchEntry', () => { ouExists = true; });
+                    searchRes.on('error', reject);
+                    searchRes.on('end', () => resolve(ouExists));
+                }
+            });
+        });
+
+        if (!searchResult) {
+            throw new Error(`L'OU spécifiée n'existe pas: ${ouPath}`);
+        }
+
+        // Créer le groupe
+        const groupDN = `CN=${groupName},${ouPath}`;
+        const entry = {
+            cn: groupName,
+            objectClass: ['top', 'group'],
+            sAMAccountName: groupName,
+            groupType: '-2147483646' // Groupe de sécurité global
+        };
+
+        await new Promise((resolve, reject) => {
+            client.add(groupDN, entry, (addErr) => {
+                if (addErr) {
+                    reject(addErr);
+                } else {
+                    resolve();
+                }
+            });
+        });
+
+        console.log('Groupe créé avec succès:', groupDN);
+
+        // Ajouter les utilisateurs au groupe
+        if (users) {
+            await addUsersToGroup(client, groupDN, users, ouPath);
+        }
+
+        req.flash('success', `Le groupe "${groupName}" a été créé avec succès dans ${ouPath}`);
+    } catch (error) {
+        console.error('Erreur lors de la création du groupe:', error);
+        req.flash('error', `Erreur lors de la création du groupe: ${error.message}`);
+    } finally {
+        client.unbind();
+        res.redirect('/files/manage-groups');
+    }
+});
 
 // Route pour noter un projet soumis
 router.post('/grade-project/:projectId/:submissionId', isAuthenticated, async (req, res) => {
