@@ -77,6 +77,12 @@
             justify-content: center;
             height: 100%;
         }
+        .project-card {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -119,7 +125,7 @@
                             <div>
                                 <span><%= file.filename %></span>
                                 <div class="notes">
-                                    <% if (file.notes) { %>
+                                    <% if (file.notes && file.notes.size > 0) { %>
                                         <% for (const [groupName, note] of file.notes) { %>
                                             <strong><%= groupName %> :</strong> <%= note %><br>
                                         <% } %>
@@ -151,30 +157,42 @@
             </div>
         </div>
 
-        <!-- Nouvelle section pour les projets -->
+        <!-- Section des projets -->
         <div class="row mt-5">
             <div class="col-12">
                 <h2>Mes Projets</h2>
-                <ul class="list-group">
-                    <% projects.forEach(project => { %>
-                        <li class="list-group-item">
-                            <h5><%= project.title %></h5>
-                            <p><%= project.description %></p>
-                            <p>Date limite : <%= new Date(project.deadline).toLocaleDateString() %></p>
-                            <% if (new Date() <= new Date(project.deadline)) { %>
-                                <form action="/files/submit-project/<%= project._id %>" method="POST" enctype="multipart/form-data">
-                                    <div class="form-group">
-                                        <label for="file">Soumettre votre travail :</label>
-                                        <input type="file" class="form-control-file" id="file" name="file" required>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Soumettre</button>
-                                </form>
-                            <% } else { %>
-                                <p class="text-danger">La date limite est passée</p>
-                            <% } %>
-                        </li>
-                    <% }) %>
-                </ul>
+                <% projects.forEach(project => { %>
+                    <div class="project-card">
+                        <h5><%= project.title %></h5>
+                        <p><%= project.description %></p>
+                        <p>Date limite : <%= new Date(project.deadline).toLocaleDateString() %></p>
+                        
+                        <% const userSubmission = project.submissions.find(sub => sub.studentName === user.sAMAccountName); %>
+                        <% if (userSubmission) { %>
+                            <div class="alert alert-info">
+                                Vous avez soumis ce projet le <%= new Date(userSubmission.submittedAt).toLocaleString() %>
+                                <% if (userSubmission.grade) { %>
+                                    <br>Note : <%= userSubmission.grade %> / 20
+                                    <% if (userSubmission.feedback) { %>
+                                        <br>Feedback : <%= userSubmission.feedback %>
+                                    <% } %>
+                                <% } else { %>
+                                    <br>En attente de notation
+                                <% } %>
+                            </div>
+                        <% } else if (new Date() <= new Date(project.deadline)) { %>
+                            <form action="/files/submit-project/<%= project._id %>" method="POST" enctype="multipart/form-data">
+                                <div class="form-group">
+                                    <label for="file">Soumettre votre travail :</label>
+                                    <input type="file" class="form-control-file" id="file" name="file" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Soumettre</button>
+                            </form>
+                        <% } else { %>
+                            <p class="text-danger">La date limite est passée</p>
+                        <% } %>
+                    </div>
+                <% }) %>
             </div>
         </div>
     </div>

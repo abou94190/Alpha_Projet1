@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Groupes AD</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 60px;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+        <a class="navbar-brand" href="/files/resources">EduShare</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Se déconnecter</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">Gestion des Groupes Active Directory</h1>
+
+        <% if (messages.error) { %>
+            <div class="alert alert-danger" role="alert">
+                <%= messages.error %>
+            </div>
+        <% } %>
+
+        <% if (messages.success) { %>
+            <div class="alert alert-success" role="alert">
+                <%= messages.success %>
+            </div>
+        <% } %>
+
+        <h2>Créer un nouveau groupe</h2>
+        <form action="/files/create-group" method="POST">
+            <div class="form-group">
+                <label for="groupName">Nom du groupe</label>
+                <input type="text" class="form-control" id="groupName" name="groupName" required>
+            </div>
+            <div class="form-group">
+                <label for="ouPath">Unité Organisationnelle (OU)</label>
+                <select class="form-control" id="ouPath" name="ouPath" required>
+                    <option value="">Sélectionnez une OU</option>
+                    <% if (ous && ous.length > 0) { %>
+                        <% ous.forEach(ou => { %>
+                            <option value="<%= ou.dn %>"><%= ou.name %></option>
+                        <% }) %>
+                    <% } else { %>
+                        <option value="">Aucune OU disponible</option>
+                    <% } %>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="users">Utilisateurs (séparés par des virgules)</label>
+                <input type="text" class="form-control" id="users" name="users" placeholder="user1,user2,user3">
+            </div>
+            <button type="submit" class="btn btn-primary">Créer le groupe</button>
+        </form>
+
+        <h2 class="mt-5">Groupes existants</h2>
+        <ul class="list-group">
+            <% let currentOU = ''; %>
+            <% groups.forEach(group => { %>
+                <% if (group.ou !== currentOU) { %>
+                    <% currentOU = group.ou; %>
+                    <li class="list-group-item active"><%= group.ou %></li>
+                <% } %>
+                <li class="list-group-item"><%= group.name %></li>
+            <% }) %>
+        </ul>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.13/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

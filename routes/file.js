@@ -6,51 +6,183 @@ const Project = require('../models/Project');
 const exceljs = require('exceljs');
 const isAuthenticated = require('../middleware/authMiddleware');
 const { getLdapGroupOU } = require('../ldapservice/ldapService');
+const ldap = require('ldapjs');
 
-// Utiliser le middleware d'authentification
+// Configuration LDAP
+const ldapConfig = {
+    url: 'ldap://192.168.1.21:389',
+    baseDN: 'DC=workshop,DC=local',
+    username: 'CN=Administrateur,CN=Users,DC=workshop,DC=local',
+    password: 'Epsi2022!'
+};
+
+// Fonction pour extraire le nom du groupe et l'OU à partir de l'entrée LDAP
+function extractGroupInfo(entry) {
+    let name = 'Nom inconnu';
+    let ou = 'OU inconnue';
+
+    if (entry.object) {
+        name = entry.object.cn || entry.object.name || name;
+        
+        if (entry.object.distinguishedName) {
+            const dnParts = entry.object.distinguishedName.split(',');
+            const ouPart = dnParts.find(part => part.startsWith('OU='));
+            ou = ouPart ? ouPart.split('=')[1] : ou;
+        }
+    } else if (entry.attributes) {
+        const cnAttr = entry.attributes.find(attr => attr.type === 'cn');
+        name = cnAttr ? cnAttr.values[0] : name;
+
+        const dnAttr = entry.attributes.find(attr => attr.type === 'distinguishedName');
+        if (dnAttr) {
+            const dnParts = dnAttr.values[0].split(',');
+            const ouPart = dnParts.find(part => part.startsWith('OU='));
+            ou = ouPart ? ouPart.split('=')[1] : ou;
+        }
+    }
+
+    return { name, ou };
+}
+
+// Fonction pour extraire le DN d'une entrée LDAP
+function getDN(entry) {
+    if (typeof entry.dn === 'string') {
+        return entry.dn;
+    } else if (entry.dn && typeof entry.dn.toString === 'function') {
+        return entry.dn.toString();
+    } else if (entry.distinguishedName) {
+        return entry.distinguishedName;
+    } else {
+        console.warn('Impossible de trouver le DN pour l\'entrée:', entry);
+        return null;
+    }
+}
+
+// Fonction pour récupérer les OUs
+function getOUs(client, baseDN) {
+    return new Promise((resolve, reject) => {
+        const opts = {
+            filter: '(|(objectClass=organizationalUnit)(objectClass=container))',
+            scope: 'sub',
+            attributes: ['ou', 'name', 'distinguishedName']
+        };
+
+        console.log('Démarrage de la recherche LDAP avec les options:', opts);
+
+        client.search(baseDN, opts, (err, res) => {
+            if (err) {
+                console.error('Erreur lors de l\'initialisation de la recherche LDAP:', err);
+                reject(err);
+                return;
+            }
+
+            const ous = [];
+            res.on('searchEntry', (entry) => {
+                console.log('Entrée LDAP brute:', JSON.stringify(entry, null, 2));
+                
+                let entryData = entry.object || entry;
+                console.log('Entrée LDAP traitée:', JSON.stringify(entryData, null, 2));
+
+                const dn = getDN(entryData);
+                if (!dn) {
+                    return;
+                }
+
+                const dnParts = dn.split(',');
+                const ouName = dnParts[0].split('=')[1];
+
+                ous.push({
+                    name: ouName,
+                    dn: dn
+                });
+                console.log('OU ajoutée:', ous[ous.length - 1]);
+            });
+
+            res.on('error', (err) => {
+                console.error('Erreur lors de la recherche LDAP:', err);
+                reject(err);
+            });
+
+            res.on('end', (result) => {
+                console.log('Recherche LDAP terminée. Résultat:', result);
+                console.log('OUs trouvées:', ous);
+                resolve(ous);
+            });
+        });
+    });
+}
+// Fonction pour récupérer les groupes
+function getGroups(client, baseDN) {
+    return new Promise((resolve, reject) => {
+        const opts = {
+            filter: '(objectClass=group)',
+            scope: 'sub',
+            attributes: ['cn', 'distinguishedName']
+        };
+
+        client.search(baseDN, opts, (err, res) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            const groups = [];
+            res.on('searchEntry', (entry) => {
+                const { name, ou } = extractGroupInfo(entry);
+                groups.push({ name, ou });
+            });
+
+            res.on('error', (err) => {
+                reject(err);
+            });
+
+            res.on('end', () => {
+                resolve(groups);
+            });
+        });
+    });
+}
+
+
 router.use(isAuthenticated);
 
-// Configuration de Multer
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // Route pour afficher la page des fichiers
 router.get('/', async (req, res) => {
-    const user = req.user; // Utilisateur authentifié
+    const user = req.user;
     if (user.isProf) {
-        // Redirige les professeurs vers la page des ressources
         return res.redirect('/files/resources');
     }
     
     try {
-        // Assurez-vous que memberOf est un tableau
         const userGroups = Array.isArray(user.memberOf) ? user.memberOf.map(g => g.split(',')[0].split('=')[1]) : [];
         let files;
 
         if (user.isAdmin) {
-            files = await File.find(); // Les administrateurs peuvent voir tous les fichiers
+            files = await File.find();
         } else {
-            // Récupérer les fichiers uploadés par l'utilisateur ou partagés avec leurs groupes
             files = await File.find({
                 $or: [
-                    { uploadedBy: user.sAMAccountName }, // Fichiers uploadés par l'utilisateur
-                    { uploadedByGroup: { $in: user.memberOf } } // Fichiers partagés avec les groupes de l'utilisateur
+                    { uploadedBy: user.sAMAccountName },
+                    { uploadedByGroup: { $in: user.memberOf } }
                 ]
             });
         }
 
-        // Récupérer les projets pour l'étudiant
         const userOU = user.dn.match(/OU=([^,]+)/)[1];
         const projects = await Project.find({ assignedOU: userOU });
 
-        res.render('files', { user, files, projects }); // Rendre la vue avec les fichiers et les projets
+        res.render('files', { user, files, projects });
     } catch (err) {
         console.error(err);
         req.flash('error', 'Erreur lors de la récupération des fichiers et des projets.');
         res.redirect('/');
     }
 });
-// Route pour afficher les ressources
+
+// Route pour afficher les ressources (vue professeur)
 router.get('/resources', async (req, res) => {
     const user = req.user;
     try {
@@ -59,21 +191,16 @@ router.get('/resources', async (req, res) => {
         }
 
         const userGroups = Array.isArray(user.memberOf) ? user.memberOf : [];
-
-        // Récupérer tous les fichiers uploadés par les membres de son groupe LDAP
         const resources = await File.find({ uploadedByGroup: { $in: userGroups } });
-
-        // Récupérer l'OU sélectionnée à partir des requêtes
         const selectedOU = req.query.ou || '';
-
-        // Récupérer tous les projets créés par ce professeur
         const projects = await Project.find({ createdBy: user.sAMAccountName });
 
         res.render('resources', { 
             user: req.user, 
             resources, 
             selectedOU, 
-            projects
+            projects,
+            isProf: req.user.isProf // Ajoutez cette ligne
         });
     } catch (err) {
         console.error(err);
@@ -172,37 +299,6 @@ router.post('/delete/:id', async (req, res) => {
     res.redirect('/files');
 });
 
-// Route pour rediriger vers Nextcloud après authentification
-router.get('/nextcloud', (req, res) => {
-    const user = req.user;
-
-    if (!user) {
-        console.log('Accès refusé : utilisateur non authentifié');
-        return res.status(403).send('Accès refusé');
-    }
-
-    const nextcloudUrl = `http://192.168.1.183/login?user=${user.sAMAccountName}`;
-    console.log(`Redirection vers Nextcloud : ${nextcloudUrl}`);
-
-    res.redirect(nextcloudUrl);
-});
-router.post('/delete-project/:id', isAuthenticated, async (req, res) => {
-    if (!req.user.isProf) {
-        return res.status(403).send('Accès refusé');
-    }
-
-    try {
-        const projectId = req.params.id;
-        await Project.findByIdAndDelete(projectId);
-        req.flash('success', 'Projet supprimé avec succès');
-        res.redirect('/files/resources');
-    } catch (error) {
-        console.error('Erreur lors de la suppression du projet:', error);
-        req.flash('error', 'Erreur lors de la suppression du projet');
-        res.redirect('/files/resources');
-    }
-});
-
 // Route pour télécharger les notes des groupes
 router.post('/resources/download-notes', async (req, res) => {
     try {
@@ -212,25 +308,38 @@ router.post('/resources/download-notes', async (req, res) => {
         const worksheet = workbook.addWorksheet('Notes des groupes');
 
         worksheet.columns = [
+            { header: 'Classe (OU)', key: 'ou', width: 20 },
             { header: 'Nom de la ressource', key: 'filename', width: 30 },
-            { header: 'Appréciation', key: 'group', width: 30 },
+            { header: 'Appréciation', key: 'appreciation', width: 30 },
             { header: 'Note', key: 'note', width: 10 },
         ];
 
         for (const file of files) {
-            if (file.notes) {
-                for (const [groupName, note] of file.notes) {
+            if (file.notes && file.notes.size > 0) {
+                for (const [appreciation, note] of file.notes) {
                     worksheet.addRow({
+                        ou: file.uploadedByOU || 'Non spécifié',
                         filename: file.filename,
-                        group: groupName,
+                        appreciation: appreciation,
                         note: note
                     });
                 }
             }
         }
 
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFD3D3D3' }
+        };
+
+        worksheet.autoFilter = 'A1:D1';
+        worksheet.getColumn('A').numFmt = '@';
+        worksheet.getColumn('D').numFmt = '0.00';
+
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', 'attachment; filename=notes.xlsx');
+        res.setHeader('Content-Disposition', 'attachment; filename=notes_par_classe.xlsx');
 
         await workbook.xlsx.write(res);
         res.end();
@@ -241,12 +350,12 @@ router.post('/resources/download-notes', async (req, res) => {
     }
 });
 
-// Route pour afficher la page de création de projet (pour les profs)
+// Route pour afficher la page de création de projet
 router.get('/create-project', isAuthenticated, (req, res) => {
     if (!req.user.isProf) {
         return res.status(403).send('Accès refusé');
     }
-    res.render('create-project');
+    res.render('create-project', { user: req.user });
 });
 
 // Route pour créer un nouveau projet
@@ -274,12 +383,13 @@ router.post('/create-project', isAuthenticated, async (req, res) => {
     }
 });
 
-// Route pour soumettre un fichier pour un projet
-router.post('/submit-project/:projectId', isAuthenticated, upload.single('file'), async (req, res) => {
+// Route pour soumettre un projet
+router.post('/submit-project/:projectId', upload.single('file'), async (req, res) => {
     try {
         const project = await Project.findById(req.params.projectId);
         if (!project) {
-            return res.status(404).send('Projet non trouvé');
+            req.flash('error', 'Projet non trouvé');
+            return res.redirect('/files');
         }
 
         const newFile = new File({
@@ -304,6 +414,160 @@ router.post('/submit-project/:projectId', isAuthenticated, upload.single('file')
         console.error('Erreur lors de la soumission du projet:', error);
         req.flash('error', 'Erreur lors de la soumission du projet');
         res.redirect('/files');
+    }
+});
+
+
+// Route pour afficher la page de gestion des groupes
+router.get('/manage-groups', isAuthenticated, async (req, res) => {
+    if (!req.user.isProf) {
+        return res.status(403).send('Accès refusé');
+    }
+
+    try {
+        const client = ldap.createClient({
+            url: ldapConfig.url
+        });
+
+        client.bind(ldapConfig.username, ldapConfig.password, async (err) => {
+            if (err) {
+                console.error('Erreur de connexion LDAP:', err);
+                return res.status(500).send('Erreur de connexion au serveur LDAP');
+            }
+
+            try {
+                const [groups, ous] = await Promise.all([
+                    getGroups(client, ldapConfig.baseDN),
+                    getOUs(client, ldapConfig.baseDN)
+                ]);
+
+                client.unbind();
+                console.log('OUs récupérées:', ous);
+                console.log('Groupes récupérés:', groups);
+
+                // Filtrer les OUs pour exclure celles qui sont déjà des groupes
+                const groupNames = new Set(groups.map(g => g.name));
+                const filteredOUs = ous.filter(ou => !groupNames.has(ou.name));
+
+                res.render('manage-groups', { groups, ous: filteredOUs });
+            } catch (error) {
+                console.error('Erreur lors de la récupération des données:', error);
+                res.status(500).send('Erreur serveur');
+            }
+        });
+    } catch (error) {
+        console.error('Erreur lors de la récupération des groupes:', error);
+        res.status(500).send('Erreur serveur');
+    }
+});
+
+// Route pour créer un nouveau groupe
+router.post('/create-group', isAuthenticated, async (req, res) => {
+    if (!req.user.isProf) {
+        return res.status(403).send('Accès refusé');
+    }
+
+    const { groupName, ouPath, users } = req.body;
+    console.log('Tentative de création de groupe:', { groupName, ouPath, users });
+
+    const client = ldap.createClient({ url: ldapConfig.url });
+
+    client.bind(ldapConfig.username, ldapConfig.password, (err) => {
+        if (err) {
+            console.error('Erreur de connexion LDAP:', err);
+            req.flash('error', 'Erreur de connexion au serveur LDAP');
+            return res.redirect('/files/manage-groups');
+        }
+
+        // Vérifier si l'OU existe
+        client.search(ouPath, { scope: 'base' }, (searchErr, searchRes) => {
+            if (searchErr) {
+                console.error('Erreur lors de la vérification de l\'OU:', searchErr);
+                req.flash('error', `Erreur lors de la vérification de l'OU: ${searchErr.message}`);
+                return res.redirect('/files/manage-groups');
+            }
+
+            let ouExists = false;
+            searchRes.on('searchEntry', (entry) => {
+                ouExists = true;
+            });
+
+            searchRes.on('error', (err) => {
+                console.error('Erreur lors de la recherche de l\'OU:', err);
+            });
+
+            searchRes.on('end', (result) => {
+                if (!ouExists) {
+                    console.error('L\'OU spécifiée n\'existe pas:', ouPath);
+                    req.flash('error', `L'OU spécifiée n'existe pas: ${ouPath}`);
+                    return res.redirect('/files/manage-groups');
+                }
+
+                // L'OU existe, procéder à la création du groupe
+                const entry = {
+                    cn: groupName,
+                    objectClass: ['top', 'group'],
+                    sAMAccountName: groupName,
+                    groupType: '-2147483646' // Groupe de sécurité global
+                };
+
+                if (users) {
+                    entry.member = users.split(',').map(user => `CN=${user},${ouPath}`);
+                }
+
+                console.log('Entrée du groupe à créer:', entry);
+
+                const dn = `CN=${groupName},${ouPath}`;
+                client.add(dn, entry, (addErr) => {
+                    if (addErr) {
+                        console.error('Erreur lors de la création du groupe:', addErr);
+                        req.flash('error', `Erreur lors de la création du groupe: ${addErr.message}`);
+                    } else {
+                        console.log('Groupe créé avec succès:', dn);
+                        req.flash('success', `Le groupe "${groupName}" a été créé avec succès dans ${ouPath}`);
+                    }
+                    res.redirect('/files/manage-groups');
+                });
+            });
+        });
+    });
+});
+
+
+// Route pour noter un projet soumis
+router.post('/grade-project/:projectId/:submissionId', isAuthenticated, async (req, res) => {
+    if (!req.user.isProf) {
+        return res.status(403).send('Accès refusé');
+    }
+
+    try {
+        const { projectId, submissionId } = req.params;
+        const { grade, feedback } = req.body;
+
+        const project = await Project.findById(projectId);
+        if (!project) {
+            req.flash('error', 'Projet non trouvé');
+            return res.redirect('/files/resources');
+        }
+
+        const submissionIndex = project.submissions.findIndex(sub => sub._id.toString() === submissionId);
+        if (submissionIndex === -1) {
+            req.flash('error', 'Soumission non trouvée');
+            return res.redirect('/files/resources');
+        }
+
+        // Mise à jour de la soumission
+        project.submissions[submissionIndex].grade = grade;
+        project.submissions[submissionIndex].feedback = feedback;
+
+        await project.save();
+
+        req.flash('success', 'Note attribuée avec succès');
+        res.redirect('/files/resources');
+    } catch (error) {
+        console.error('Erreur lors de la notation du projet:', error);
+        req.flash('error', 'Erreur lors de la notation du projet');
+        res.redirect('/files/resources');
     }
 });
 
