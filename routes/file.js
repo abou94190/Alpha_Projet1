@@ -7,6 +7,10 @@ const exceljs = require('exceljs');
 const isAuthenticated = require('../middleware/authMiddleware');
 const { getLdapGroupOU } = require('../ldapservice/ldapService');
 const ldap = require('ldapjs');
+const { promisify } = require('util');
+
+
+let manualUsers = [];
 
 // Configuration LDAP
 const ldapConfig = {
@@ -15,6 +19,96 @@ const ldapConfig = {
     username: 'CN=Administrateur,CN=Users,DC=workshop,DC=local',
     password: 'Epsi2022!'
 };
+
+function promisifyLdap(client) {
+    return ['bind', 'add', 'modify', 'search'].reduce((acc, method) => {
+        acc[`${method}Async`] = promisify(client[method]).bind(client);
+        return acc;
+    }, {});
+}
+
+async function createLDAPClient() {
+    const client = ldap.createClient({ url: ldapConfig.url });
+    const bindAsync = promisify(client.bind).bind(client);
+
+    try {
+        await bindAsync(ldapConfig.username, ldapConfig.password);
+        console.log('Connexion LDAP réussie');
+        return client;
+    } catch (error) {
+        console.error('Erreur de connexion LDAP:', error);
+        throw error;
+    }
+}
+
+async function createLDAPUser(client, userDN, userAttributes) {
+    const addAsync = promisify(client.add).bind(client);
+    try {
+        await addAsync(userDN, userAttributes);
+        console.log('Utilisateur LDAP créé avec succès');
+    } catch (error) {
+        console.error('Erreur lors de la création de l utilisateur LDAP:', error);
+        throw error;
+    }
+}
+
+
+// Fonction pour vérifier l'existence d'un objet LDAP
+async function checkLDAPObjectExists(ldapAsync, dn) {
+    try {
+        const res = await ldapAsync.searchAsync(dn, { scope: 'base' });
+        return new Promise((resolve) => {
+            res.on('searchEntry', () => resolve(true));
+            res.on('end', () => resolve(false));
+        });
+    } catch (error) {
+        console.error(`Erreur lors de la vérification de l'existence de ${dn}:`, error);
+        return false;
+    }
+}
+// Fonction pour vérifier la connexion et effectuer une recherche de base
+async function testLDAPConnection() {
+    const client = await createLDAPClient();
+    const searchAsync = promisify(client.search).bind(client);
+
+    try {
+        const result = await searchAsync(ldapConfig.baseDN, {
+            scope: 'base',
+            filter: '(objectClass=*)'
+        });
+
+        return new Promise((resolve, reject) => {
+            result.on('searchEntry', (entry) => {
+                console.log('Entrée trouvée:', entry.object);
+                resolve(true);
+            });
+            result.on('error', (err) => {
+                console.error('Erreur de recherche:', err);
+                reject(err);
+            });
+            result.on('end', (result) => {
+                if (result.status !== 0) {
+                    console.error('Recherche terminée avec statut:', result.status);
+                    reject(new Error(`Recherche terminée avec statut: ${result.status}`));
+                } else {
+                    resolve(false);
+                }
+            });
+        });
+    } finally {
+        client.unbind();
+    }
+}
+// Exemple d'utilisation dans une route
+router.get('/test-ldap', async (req, res) => {
+    try {
+        const result = await testLDAPConnection();
+        res.send(`Test LDAP réussi: ${result}`);
+    } catch (error) {
+        console.error('Erreur lors du test LDAP:', error);
+        res.status(500).send(`Erreur LDAP: ${error.message}`);
+    }
+});
 
 const addUsersToGroup = (client, groupDN, users, ouPath) => {
     return new Promise((resolve, reject) => {
@@ -41,35 +135,73 @@ const addUsersToGroup = (client, groupDN, users, ouPath) => {
         });
     });
 };
+
 function getUsers(client, baseDN) {
     return new Promise((resolve, reject) => {
         const opts = {
-            filter: '(&(objectClass=user)(!(objectClass=computer)))',
+            filter: '(objectClass=*)', // Élargir la recherche à tous les objets
             scope: 'sub',
-            attributes: ['sAMAccountName', 'displayName']
+            attributes: ['sAMAccountName', 'displayName', 'objectClass', 'distinguishedName']
         };
+
+        console.log('Démarrage de la recherche LDAP pour les utilisateurs avec les options:', JSON.stringify(opts));
+        console.log('BaseDN utilisé:', baseDN);
 
         client.search(baseDN, opts, (err, res) => {
             if (err) {
+                console.error('Erreur lors de l\'initialisation de la recherche LDAP des utilisateurs:', err);
                 reject(err);
                 return;
             }
 
             const users = [];
+            let entryCount = 0;
+
             res.on('searchEntry', (entry) => {
-                const user = {
-                    sAMAccountName: entry.object.sAMAccountName,
-                    displayName: entry.object.displayName || entry.object.sAMAccountName
-                };
-                users.push(user);
+                entryCount++;
+                console.log('Entrée LDAP brute:', JSON.stringify(entry, null, 2));
+                
+                if (entry && entry.object) {
+                    const objectClasses = Array.isArray(entry.object.objectClass) 
+                        ? entry.object.objectClass 
+                        : [entry.object.objectClass];
+
+                    // Vérifier si l'objet est un utilisateur
+                    if (objectClasses.includes('user') || objectClasses.includes('person')) {
+                        const user = {
+                            sAMAccountName: entry.object.sAMAccountName || 'Nom inconnu',
+                            displayName: entry.object.displayName || entry.object.sAMAccountName || 'Nom d\'affichage inconnu',
+                            objectClass: objectClasses,
+                            distinguishedName: entry.object.distinguishedName
+                        };
+                        users.push(user);
+                        console.log('Utilisateur ajouté:', JSON.stringify(user));
+                    } else {
+                        console.log('Objet non-utilisateur trouvé:', entry.object.distinguishedName);
+                    }
+                } else {
+                    console.warn('Entrée LDAP invalide:', entry);
+                }
             });
 
-            res.on('error', reject);
-            res.on('end', () => resolve(users));
+            res.on('searchReference', (referral) => {
+                console.log('Référence de recherche reçue:', referral.uris.join());
+            });
+
+            res.on('error', (err) => {
+                console.error('Erreur lors de la recherche des utilisateurs:', err);
+                reject(err);
+            });
+
+            res.on('end', (result) => {
+                console.log(`Recherche terminée. Résultat:`, result);
+                console.log(`Total des entrées trouvées: ${entryCount}`);
+                console.log(`Utilisateurs valides trouvés: ${users.length}`);
+                resolve(users);
+            });
         });
     });
 }
-
 // Fonction pour extraire le nom du groupe et l'OU à partir de l'entrée LDAP
 function extractGroupInfo(entry) {
     let name = 'Nom inconnu';
@@ -383,7 +515,27 @@ router.post('/delete/:id', async (req, res) => {
     }
     res.redirect('/files');
 });
+router.post('/delete-project/:id', isAuthenticated, async (req, res) => {
+    if (!req.user.isProf) {
+        return res.status(403).send('Accès refusé');
+    }
 
+    try {
+        const projectId = req.params.id;
+        const deletedProject = await Project.findByIdAndDelete(projectId);
+
+        if (!deletedProject) {
+            req.flash('error', 'Projet non trouvé');
+        } else {
+            req.flash('success', 'Projet supprimé avec succès');
+        }
+    } catch (error) {
+        console.error('Erreur lors de la suppression du projet:', error);
+        req.flash('error', 'Erreur lors de la suppression du projet');
+    }
+
+    res.redirect('/files/resources');
+});
 // Route pour télécharger les notes des groupes
 router.post('/resources/download-notes', async (req, res) => {
     try {
@@ -502,111 +654,107 @@ router.post('/submit-project/:projectId', upload.single('file'), async (req, res
     }
 });
 
+router.post('/add-user', isAuthenticated, async (req, res) => {
+    if (!req.user.isProf) {
+        return res.status(403).send('Accès refusé');
+    }
 
+    const { username, displayName, password, ouPath } = req.body;
+    if (!username || !displayName || !password || !ouPath) {
+        req.flash('error', 'Tous les champs sont requis');
+        return res.redirect('/files/manage-groups');
+    }
+
+    let client;
+    try {
+        client = await createLDAPClient();
+
+        const userDN = `CN=${username},${ouPath}`;
+        const userAttributes = {
+            cn: username,
+            sn: displayName,
+            objectClass: ['top', 'person', 'organizationalPerson', 'user'],
+            sAMAccountName: username,
+            userPrincipalName: `${username}@workshop.local`,
+            displayName: displayName,
+            userAccountControl: '66048', // Normal account, password never expires
+            unicodePwd: Buffer.from(`"${password}"`, 'utf16le').toString()
+        };
+
+        await createLDAPUser(client, userDN, userAttributes);
+
+        req.flash('success', 'Utilisateur ajouté avec succès');
+    } catch (error) {
+        console.error('Erreur lors de l ajout de l utilisateur:', error);
+        req.flash('error', `Erreur lors de l'ajout de l'utilisateur: ${error.message}`);
+    } finally {
+        if (client) {
+            client.unbind();
+        }
+        res.redirect('/files/manage-groups');
+    }
+});
+
+// Route pour supprimer un utilisateur manuellement
+router.post('/remove-user', isAuthenticated, (req, res) => {
+    const { username } = req.body;
+    manualUsers = manualUsers.filter(user => user.username !== username);
+    req.flash('success', 'Utilisateur supprimé avec succès');
+    res.redirect('/files/manage-groups');
+});
+// Route pour afficher la page de gestion des groupes
 router.get('/manage-groups', isAuthenticated, async (req, res) => {
     if (!req.user.isProf) {
         return res.status(403).send('Accès refusé');
     }
 
     try {
-        const client = ldap.createClient({
-            url: ldapConfig.url
-        });
-
+        const client = ldap.createClient({ url: ldapConfig.url });
         await new Promise((resolve, reject) => {
-            client.bind(ldapConfig.username, ldapConfig.password, (err) => {
-                if (err) {
-                    console.error('Erreur de connexion LDAP:', err);
-                    reject(err);
-                } else {
-                    resolve();
-                }
+            client.bind(ldapConfig.username, ldapConfig.password, err => {
+                if (err) reject(err);
+                else resolve();
             });
         });
 
-        const groups = await getGroups(client, ldapConfig.baseDN);
-        const ous = await getOUs(client, ldapConfig.baseDN);
+        const [groups, ous] = await Promise.all([
+            getGroups(client, ldapConfig.baseDN),
+            getOUs(client, ldapConfig.baseDN)
+        ]);
 
         client.unbind();
 
-        // Trier les groupes par OU
-        groups.sort((a, b) => a.ou.localeCompare(b.ou));
-
-        res.render('manage-groups', { groups, ous });
+        res.render('manage-groups', { groups, ous, manualUsers });
     } catch (error) {
-        console.error('Erreur lors de la récupération des groupes:', error);
-        req.flash('error', 'Erreur lors de la récupération des groupes');
+        console.error('Erreur:', error);
+        req.flash('error', 'Erreur lors de la récupération des données');
         res.status(500).send('Erreur serveur');
     }
 });
 
+// Route pour créer un nouveau groupe
 router.post('/create-group', isAuthenticated, async (req, res) => {
     if (!req.user.isProf) {
         return res.status(403).send('Accès refusé');
     }
 
-    const { groupName, ouPath, users } = req.body;
-    console.log('Tentative de création de groupe:', { groupName, ouPath, users });
-
+    const { groupName, ouPath } = req.body;
     const client = ldap.createClient({ url: ldapConfig.url });
+    const ldapAsync = promisifyLdap(client);
 
     try {
-        await new Promise((resolve, reject) => {
-            client.bind(ldapConfig.username, ldapConfig.password, (err) => {
-                if (err) {
-                    console.error('Erreur de connexion LDAP:', err);
-                    reject(err);
-                } else {
-                    resolve();
-                }
-            });
-        });
+        await ldapAsync.bindAsync(ldapConfig.username, ldapConfig.password);
 
-        // Vérifier si l'OU existe
-        const searchResult = await new Promise((resolve, reject) => {
-            client.search(ouPath, { scope: 'base' }, (searchErr, searchRes) => {
-                if (searchErr) {
-                    reject(searchErr);
-                } else {
-                    let ouExists = false;
-                    searchRes.on('searchEntry', () => { ouExists = true; });
-                    searchRes.on('error', reject);
-                    searchRes.on('end', () => resolve(ouExists));
-                }
-            });
-        });
-
-        if (!searchResult) {
-            throw new Error(`L'OU spécifiée n'existe pas: ${ouPath}`);
-        }
-
-        // Créer le groupe
         const groupDN = `CN=${groupName},${ouPath}`;
         const entry = {
             cn: groupName,
             objectClass: ['top', 'group'],
             sAMAccountName: groupName,
-            groupType: '-2147483646' // Groupe de sécurité global
+            groupType: '-2147483646'
         };
 
-        await new Promise((resolve, reject) => {
-            client.add(groupDN, entry, (addErr) => {
-                if (addErr) {
-                    reject(addErr);
-                } else {
-                    resolve();
-                }
-            });
-        });
-
-        console.log('Groupe créé avec succès:', groupDN);
-
-        // Ajouter les utilisateurs au groupe
-        if (users) {
-            await addUsersToGroup(client, groupDN, users, ouPath);
-        }
-
-        req.flash('success', `Le groupe "${groupName}" a été créé avec succès dans ${ouPath}`);
+        await ldapAsync.addAsync(groupDN, entry);
+        req.flash('success', `Le groupe "${groupName}" a été créé avec succès`);
     } catch (error) {
         console.error('Erreur lors de la création du groupe:', error);
         req.flash('error', `Erreur lors de la création du groupe: ${error.message}`);
@@ -616,6 +764,114 @@ router.post('/create-group', isAuthenticated, async (req, res) => {
     }
 });
 
+router.post('/add-users-to-group', isAuthenticated, async (req, res) => {
+    if (!req.user.isProf) {
+        return res.status(403).send('Accès refusé');
+    }
+
+    const { existingGroup, usernames } = req.body;
+    console.log('Groupe sélectionné:', existingGroup);
+    console.log('Utilisateurs à ajouter:', usernames);
+
+    const client = ldap.createClient({ url: ldapConfig.url });
+    const ldapAsync = promisifyLdap(client);
+
+    try {
+        await ldapAsync.bindAsync(ldapConfig.username, ldapConfig.password);
+        console.log('Connexion LDAP réussie');
+
+        console.log('Configuration LDAP utilisée:');
+        console.log('URL:', ldapConfig.url);
+        console.log('Base DN:', ldapConfig.baseDN);
+        console.log('Username:', ldapConfig.username);
+
+        const logEntry = (entry) => {
+            console.log('DN:', entry.dn);
+            if (entry.attributes) {
+                entry.attributes.forEach(attr => {
+                    console.log(`${attr.type}:`, attr.values);
+                });
+            }
+        };
+
+        // Lister tous les utilisateurs
+        console.log('Recherche de tous les utilisateurs:');
+        try {
+            const allUsersResult = await ldapAsync.searchAsync(ldapConfig.baseDN, {
+                scope: 'sub',
+                filter: '(&(objectClass=user)(objectCategory=person))',
+                attributes: ['dn', 'sAMAccountName', 'cn', 'displayName'],
+                sizeLimit: 1000
+            });
+
+            console.log(`Nombre total d'utilisateurs trouvés: ${allUsersResult.entries ? allUsersResult.entries.length : 0}`);
+            
+            if (allUsersResult.entries && allUsersResult.entries.length > 0) {
+                console.log('Échantillon de 5 utilisateurs:');
+                allUsersResult.entries.slice(0, 5).forEach(logEntry);
+            } else {
+                console.log('Aucun utilisateur trouvé');
+            }
+        } catch (searchError) {
+            console.error('Erreur lors de la recherche de tous les utilisateurs:', searchError);
+        }
+
+        // Recherche des utilisateurs spécifiques
+        const users = usernames.split(',').map(username => username.trim());
+        for (const user of users) {
+            console.log(`Recherche de l'utilisateur spécifique: ${user}`);
+            try {
+                const userResult = await ldapAsync.searchAsync(ldapConfig.baseDN, {
+                    scope: 'sub',
+                    filter: `(&(objectClass=user)(|(sAMAccountName=${user})(cn=${user})(displayName=${user})))`,
+                    attributes: ['dn', 'sAMAccountName', 'cn', 'displayName']
+                });
+
+                if (userResult.entries && userResult.entries.length > 0) {
+                    console.log(`Utilisateur "${user}" trouvé:`);
+                    logEntry(userResult.entries[0]);
+                } else {
+                    console.log(`Aucun résultat pour l'utilisateur "${user}"`);
+                }
+            } catch (userSearchError) {
+                console.error(`Erreur lors de la recherche de l'utilisateur "${user}":`, userSearchError);
+            }
+        }
+
+        // Ne pas essayer d'ajouter les utilisateurs pour le moment
+        throw new Error("Test de recherche terminé. Aucune modification de groupe effectuée.");
+
+    } catch (error) {
+        console.error('Erreur détaillée:', error);
+        req.flash('error', `Erreur: ${error.message}`);
+    } finally {
+        client.unbind();
+        res.redirect('/files/manage-groups');
+    }
+});
+
+router.post('/delete-group', isAuthenticated, async (req, res) => {
+    if (!req.user.isProf) {
+        return res.status(403).send('Accès refusé');
+    }
+
+    const { groupDN } = req.body;
+    const client = ldap.createClient({ url: ldapConfig.url });
+    const ldapAsync = promisifyLdap(client);
+
+    try {
+        await ldapAsync.bindAsync(ldapConfig.username, ldapConfig.password);
+
+        await ldapAsync.deleteAsync(groupDN);
+        req.flash('success', `Groupe supprimé avec succès`);
+    } catch (error) {
+        console.error('Erreur lors de la suppression du groupe:', error);
+        req.flash('error', `Erreur lors de la suppression du groupe: ${error.message}`);
+    } finally {
+        client.unbind();
+        res.redirect('/files/manage-groups');
+    }
+});
 // Route pour noter un projet soumis
 router.post('/grade-project/:projectId/:submissionId', isAuthenticated, async (req, res) => {
     if (!req.user.isProf) {
