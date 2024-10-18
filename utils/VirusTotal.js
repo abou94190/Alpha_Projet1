@@ -2,7 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 
 // Remplacer par votre clé API VirusTotal
-const API_KEY = 'ffa8142b5240e436c4d086b98a1c5391cc367b3b52da730f83c8345f1297d53';
+const API_KEY = '';
 
 // Fonction pour analyser un fichier avec VirusTotal
 async function scanFileWithVirusTotal(filePath) {
